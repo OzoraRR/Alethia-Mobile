@@ -1,0 +1,6 @@
+packages: []
+
+# esbuild's install hook fetches the platform binary required by tsx.
+# All other dependency install scripts remain blocked by pnpm's secure default.
+allowBuilds:
+  esbuild: true

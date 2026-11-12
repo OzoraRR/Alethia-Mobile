@@ -1,0 +1,96 @@
+name: Backend API CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-api-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    name: Detect API changes
+    runs-on: ubuntu-24.04
+    outputs:
+      api: ${{ steps.filter.outputs.api }}
+    steps:
+      - name: Check out source history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Decide whether API checks are needed
+        id: filter
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: bash .github/scripts/detect-changes-backend.sh
+
+  api:
+    name: Lint, typecheck, unit tests and production build
+    needs: changes
+    if: needs.changes.outputs.api == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          version: 12.17.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: backend/.nvmrc
+          cache: pnpm
+          cache-dependency-path: backend/pnpm-lock.yaml
+
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Run API unit tests
+        run: pnpm test
+
+      - name: Build production API service
+        run: pnpm build
+
+  required:
+    name: Required API checks
+    if: always()
+    needs: [changes, api]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Evaluate required checks
+        env:
+          CHANGE_RESULT: ${{ needs.changes.result }}
+          API_CHANGED: ${{ needs.changes.outputs.api }}
+          API_RESULT: ${{ needs.api.result }}
+        run: |
+          if [[ "$CHANGE_RESULT" != "success" ]]; then
+            echo "Change detection failed."
+            exit 1
+          fi
+          if [[ "$API_CHANGED" == "true" && "$API_RESULT" != "success" ]]; then
+            echo "API verification did not succeed: $API_RESULT"
+            exit 1
+          fi
+          echo "All required API checks succeeded or were not needed."

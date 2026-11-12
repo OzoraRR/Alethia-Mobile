@@ -1,0 +1,23 @@
+# Shared generated files
+.DS_Store
+Thumbs.db
+.idea/
+.gradle/
+.kotlin/
+**/build/
+**/node_modules/
+**/.next/
+**/out/
+**/coverage/
+**/*.tsbuildinfo
+
+# Android workstation configuration and signing material
+android/local.properties
+android/alethia.properties
+android/alethia.*.properties
+android/**/*.jks
+android/**/*.keystore
+
+# Backend environment files; keep the safe example template tracked
+backend/.env*
+!backend/.env.example

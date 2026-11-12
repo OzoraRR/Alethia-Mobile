@@ -1,0 +1,41 @@
+{
+  "name": "alethia-backend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3001",
+    "dev:local": "next dev -p 3002",
+    "dev:hosted": "node --env-file=.env.hosted.local ./node_modules/next/dist/bin/next dev -p 3002",
+    "build": "next build",
+    "start": "next start -p 3001",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test tests/*.test.ts",
+    "test:local-auth": "tsx --test tests/local-auth.integration.test.ts",
+    "verify:migrations": "bash scripts/verify-migrations.sh",
+    "lint": "eslint . --max-warnings=0",
+    "db:start": "supabase start",
+    "db:reset": "supabase db reset",
+    "db:test": "supabase test db",
+    "db:verify-restore": "bash scripts/verify-local-backup-restore.sh",
+    "db:stop": "supabase stop"
+  },
+  "dependencies": {
+    "next": "15.5.28",
+    "react": "19.2.6",
+    "react-dom": "19.2.6"
+  },
+  "devDependencies": {
+    "@types/node": "22.10.2",
+    "@types/react": "19.0.2",
+    "tsx": "4.23.15",
+    "typescript": "5.7.2",
+    "eslint": "9.39.5",
+    "eslint-config-next": "15.5.28",
+    "supabase": "3.1.0",
+    "@eslint/eslintrc": "3.3.7"
+  },
+  "packageManager": "pnpm@12.17.0",
+  "engines": {
+    "node": ">=22 <25"
+  }
+}

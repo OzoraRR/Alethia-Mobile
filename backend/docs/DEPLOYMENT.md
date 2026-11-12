@@ -1,30 +1,31 @@
 # Backend staging deployment
 
-**Status:** configuration prepared; no hosting account connected and no deployment created.
+**Status:** Vercel is not connected. The existing Supabase project `Alethia Mobile` was selected as the current staging target, reset from repository migrations, and passed a synthetic Auth smoke test on 12 November 2026.
 **Last reviewed:** 12 November 2026
 
-## Proposed staging target
+## Current staging target
 
-- Host: Vercel, for the Next.js API in this repository.
+- Proposed host: Vercel, for the Next.js API in this repository. No Vercel account or deployment is connected yet.
 - Vercel project root: `backend/` (the Android app remains outside the deployment; see [Vercel monorepo configuration](https://vercel.com/docs/monorepos)).
 - Runtime: Node.js 24; package manager: pnpm 12.17.0, as pinned by the backend.
 - Function region: Singapore (`sin1`), configured in `backend/vercel.json` to stay close to the current Supabase region ([region settings](https://vercel.com/docs/functions/configuring-functions/region)).
-- First environment: Preview only, connected to a **dedicated staging Supabase project**. Do not use the production project for preview deployments or deletion tests.
+- Supabase: the project owner designated the existing `Alethia Mobile` project as staging. Supabase CLI labels its environment `production`; it is not isolated from a separate production project. Do not connect real production users to it. Create a separate Supabase project before production release.
+- Preview environment: connect only to the user-designated `Alethia Mobile` staging target, with synthetic accounts for deletion tests.
 - Transport: use the provider HTTPS URL for staging. Attach a custom domain only when one is available; verify its TLS certificate after DNS setup ([Vercel SSL](https://vercel.com/docs/domains/working-with-ssl)).
 
 Vercel Hobby is limited to personal, non-commercial use. Vercel lists Pro at USD 20/month plus usage beyond its included credit ([pricing](https://vercel.com/pricing)). Choose the plan that matches the project's use before connecting an account; this repository change does not create an account, deployment, or charge.
 
 ## Provider setup checklist
 
-1. Push this repository to its intended GitHub repository and connect that repository to Vercel.
+1. Connect `OzoraRR/Alethia-Mobile` to Vercel.
 2. Set the Vercel project root directory to `backend/`.
-3. Create a separate Supabase staging project in Singapore and apply the checked-in migrations. Keep production credentials out of Preview scope.
+3. Use the existing `Alethia Mobile` project for Preview as designated above. Its database was reset and all 48 checked-in migrations were applied; keep production user data out of it.
 4. Add these variables in the Vercel project settings for **Preview only**:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
    - `SUPABASE_SECRET_KEY` (server-only; never add this to Android or a `NEXT_PUBLIC_` variable)
 5. Deploy a Preview build and verify `GET /api/health` returns HTTP 200, JSON status `ok`, and an `X-Request-ID` header.
-6. Verify username sign-in and account deletion using synthetic accounts in staging. Confirm deleted users and their avatar objects are removed. Never use a real user's account for deletion testing.
+6. Re-run username sign-in and account deletion through the deployed Preview using synthetic accounts. The local API against hosted Supabase already passed signup, username login, wrong-password rejection, and account deletion; no avatar object existed during that test. Never use a real user's account for deletion testing.
 7. Record the deployment URL, staging project reference, migration head, test date, and outcome without copying any keys into this repository.
 
 Production deployment is a separate decision: use a separate Supabase project and Production-scoped variables, confirm auth and rate-limit policies, and review the production migration plan before enabling it.

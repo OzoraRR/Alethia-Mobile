@@ -26,6 +26,7 @@ Before production, rehearse a provider-supported restore into a **new non-produc
 ### Current status
 
 - [x] Local dump/restore smoke script added to the database CI workflow.
+- [x] The selected `Alethia Mobile` project was reset from all 48 repository migrations; hosted signup/login/deletion smoke passed and left no test account. This is not a backup restore rehearsal.
 - [ ] Confirm the selected hosted project's backup entitlement and retention.
 - [ ] Enable/verify off-site Storage object backups.
 - [ ] Complete a hosted provider restore rehearsal in a separate staging project.

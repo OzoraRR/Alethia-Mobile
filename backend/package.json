@@ -30,7 +30,7 @@
     "tsx": "4.23.15",
     "typescript": "5.7.2",
     "eslint": "9.39.5",
-    "eslint-config-next": "15.5.28",
+    "eslint-config-next": "16.4.5",
     "supabase": "3.1.0",
     "@eslint/eslintrc": "3.3.7"
   },

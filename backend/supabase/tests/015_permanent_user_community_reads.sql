@@ -3,7 +3,7 @@
 
 begin;
 
-select plan(9);
+select plan(11);
 
 create temporary table community_fixture (
   anonymous_user_id uuid not null,
@@ -15,6 +15,7 @@ insert into community_fixture
 values (gen_random_uuid(), gen_random_uuid(), gen_random_uuid());
 
 grant select on community_fixture to authenticated;
+grant select on community_fixture to anon;
 
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
@@ -96,6 +97,23 @@ from community_fixture as fixture;
 insert into public.report_verdicts (report_id, user_id, author_username, verdict, reason)
 select fixture.report_id, fixture.permanent_user_id, 'community_test', 'valid', 'Synthetic verdict reason.'
 from community_fixture as fixture;
+
+-- The public profile keeps basic learning information but does not disclose
+-- the report and investigation activity created above.
+set local role anon;
+select ok(
+  (public.get_public_profile((
+    select 'community_user_' || left(permanent_user_id::text, 8) from community_fixture
+  )) ?& array['username', 'modules_completed', 'mastery', 'badges']),
+  'anonymous readers receive only the basic public profile fields'
+);
+select ok(
+  not (public.get_public_profile((
+    select 'community_user_' || left(permanent_user_id::text, 8) from community_fixture
+  )) ?| array['email', 'report_count', 'reports', 'investigations']),
+  'anonymous readers cannot see report or investigation activity in a profile'
+);
+reset role;
 
 -- Anonymous Auth still maps to the authenticated Postgres role, but must see
 -- no community rows in any of the four tables.

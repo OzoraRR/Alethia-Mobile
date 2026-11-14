@@ -1,0 +1,12 @@
+# Supabase CLI state and SQL are managed separately from the API deployment.
+supabase/
+
+# These files are for local verification and team documentation only.
+tests/
+scripts/
+docs/
+README.md
+SECURITY_FRAMEWORK.md
+
+# Local TypeScript build metadata.
+*.tsbuildinfo

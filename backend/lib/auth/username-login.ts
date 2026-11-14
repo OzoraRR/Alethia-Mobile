@@ -7,6 +7,10 @@ export type UsernameLoginConfig = {
 
 type UsernameLoginDependencies = {
   getConfig: () => UsernameLoginConfig | null;
+  consumeRateLimit: (request: Request) => Promise<{
+    allowed: boolean;
+    retryAfterSeconds: number;
+  }>;
   resolveEmail: (username: string) => Promise<string | null>;
   fetch?: typeof fetch;
   logFailure?: typeof logApiFailure;
@@ -15,13 +19,18 @@ type UsernameLoginDependencies = {
 /** Build the username sign-in HTTP handler with injectable Supabase boundaries. */
 export function createUsernameLoginHandler({
   getConfig,
+  consumeRateLimit,
   resolveEmail,
   fetch: fetchImpl = fetch,
   logFailure = logApiFailure,
 }: UsernameLoginDependencies) {
   return async function POST(request: Request): Promise<Response> {
     const requestId = getRequestId(request);
-    const json = (payload: unknown, init?: ResponseInit) => jsonWithRequestId(payload, requestId, init);
+    const json = (payload: unknown, init?: ResponseInit) => {
+      const headers = new Headers(init?.headers);
+      headers.set("Cache-Control", "no-store");
+      return jsonWithRequestId(payload, requestId, { ...init, headers });
+    };
     const contentLength = Number(request.headers.get("content-length"));
     if (Number.isFinite(contentLength) && contentLength > 2048) {
       return json({ error: "invalid_credentials" }, { status: 400 });
@@ -60,6 +69,20 @@ export function createUsernameLoginHandler({
     }
 
     try {
+      const rateLimit = await consumeRateLimit(request);
+      if (!rateLimit.allowed) {
+        return json(
+          { error: "rate_limited" },
+          {
+            status: 429,
+            headers: {
+              "Cache-Control": "no-store",
+              "Retry-After": String(Math.min(900, Math.max(1, Math.ceil(rateLimit.retryAfterSeconds)))),
+            },
+          },
+        );
+      }
+
       const email = await resolveEmail(username);
 
       // The private email is used only for the server-to-Supabase Auth exchange.

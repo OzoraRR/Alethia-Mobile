@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-container="supabase_db_alethia"
+container="${SUPABASE_DB_CONTAINER:-supabase_db_alethia}"
 restore_db="alethia_restore_check_$$"
 snapshot="$(mktemp "${TMPDIR:-/tmp}/alethia-local-restore.XXXXXX")"
 

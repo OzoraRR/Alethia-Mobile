@@ -5,7 +5,11 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 # Keep the local keys in process memory; never print them or evaluate arbitrary
 # shell text from the CLI output.
-status_output="$(./node_modules/.bin/supabase status -o env 2>/dev/null)"
+if [[ -n "${SUPABASE_WORKDIR:-}" ]]; then
+  status_output="$(./node_modules/.bin/supabase --workdir "$SUPABASE_WORKDIR" status -o env 2>/dev/null)"
+else
+  status_output="$(./node_modules/.bin/supabase status -o env 2>/dev/null)"
+fi
 get_status_value() {
   local requested="$1"
   local line name value

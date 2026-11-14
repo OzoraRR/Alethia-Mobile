@@ -52,6 +52,7 @@ test("local Supabase signup creates a username profile and username login return
 
     const handler = createUsernameLoginHandler({
       getConfig: () => ({ url: supabaseUrl, publishableKey }),
+      consumeRateLimit: async () => ({ allowed: true, retryAfterSeconds: 0 }),
       resolveEmail: (requestedUsername) => callAdminRpcWithConfig<string>(
         { url: supabaseUrl, key: secretKey, fetch: localFetch },
         "get_profile_email_by_username",

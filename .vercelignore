@@ -1,0 +1,18 @@
+# The CLI deploy runs from the monorepo root; this Vercel project serves only backend/.
+/*
+!/backend
+!/backend/**
+
+# Keep local build output, dependencies, secrets, SQL and verification-only files out.
+/backend/node_modules/
+/backend/.next/
+/backend/.vercel/
+/backend/.env.local
+/backend/.env.*.local
+/backend/supabase/
+/backend/tests/
+/backend/scripts/
+/backend/docs/
+/backend/README.md
+/backend/SECURITY_FRAMEWORK.md
+/backend/*.tsbuildinfo

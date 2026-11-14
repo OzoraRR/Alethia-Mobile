@@ -46,6 +46,8 @@ function post(body: string): Request {
   });
 }
 
+const allowRateLimit = async () => ({ allowed: true, retryAfterSeconds: 0 });
+
 test("username login exchanges a private username lookup for a Supabase Auth session", async (t) => {
   const received: ReceivedRequest[] = [];
   const server = createServer((request, response) => {
@@ -81,6 +83,7 @@ test("username login exchanges a private username lookup for a Supabase Auth ses
   const secretKey = "sb_secret_test-key";
   const handler = createUsernameLoginHandler({
     getConfig: () => ({ url, publishableKey: publicKey }),
+    consumeRateLimit: allowRateLimit,
     resolveEmail: (username) => callAdminRpcWithConfig<string>(
       { url, key: secretKey },
       "get_profile_email_by_username",
@@ -112,11 +115,13 @@ test("unknown username and rejected password return the same generic response", 
   const config = { url: "http://supabase.test", publishableKey: "public-key" };
   const unknownUser = createUsernameLoginHandler({
     getConfig: () => config,
+    consumeRateLimit: allowRateLimit,
     resolveEmail: async () => null,
     fetch: async () => { throw new Error("Auth must not be called for an unknown username"); },
   });
   const invalidPassword = createUsernameLoginHandler({
     getConfig: () => config,
+    consumeRateLimit: allowRateLimit,
     resolveEmail: async () => "private@example.test",
     fetch: async () => Response.json({ msg: "Invalid login credentials" }, { status: 400 }),
   });
@@ -125,6 +130,8 @@ test("unknown username and rejected password return the same generic response", 
   const passwordResponse = await invalidPassword(post(JSON.stringify({ username: "someone", password: "bad-password" })));
   assert.equal(unknownResponse.status, 401);
   assert.equal(passwordResponse.status, 401);
+  assert.equal(unknownResponse.headers.get("cache-control"), "no-store");
+  assert.equal(passwordResponse.headers.get("cache-control"), "no-store");
   assert.deepEqual(await unknownResponse.json(), { error: "invalid_credentials" });
   assert.deepEqual(await passwordResponse.json(), { error: "invalid_credentials" });
 });
@@ -133,6 +140,7 @@ test("username login validates bounded input before making Supabase calls", asyn
   let lookupCalls = 0;
   const handler = createUsernameLoginHandler({
     getConfig: () => ({ url: "http://supabase.test", publishableKey: "public-key" }),
+    consumeRateLimit: allowRateLimit,
     resolveEmail: async () => { lookupCalls += 1; return "private@example.test"; },
     fetch: async () => { throw new Error("Auth must not be called for invalid input"); },
   });
@@ -150,6 +158,7 @@ test("username login validates bounded input before making Supabase calls", asyn
 test("Auth rate limiting is surfaced without exposing account information", async () => {
   const handler = createUsernameLoginHandler({
     getConfig: () => ({ url: "http://supabase.test", publishableKey: "public-key" }),
+    consumeRateLimit: allowRateLimit,
     resolveEmail: async () => "private@example.test",
     fetch: async () => Response.json({ message: "rate limit" }, { status: 429 }),
   });
@@ -157,4 +166,22 @@ test("Auth rate limiting is surfaced without exposing account information", asyn
   const response = await handler(post(JSON.stringify({ username: "someone", password: "password" })));
   assert.equal(response.status, 429);
   assert.deepEqual(await response.json(), { error: "rate_limited" });
+});
+
+test("app rate limiting blocks username lookup and returns Retry-After", async () => {
+  let lookupCalls = 0;
+  const handler = createUsernameLoginHandler({
+    getConfig: () => ({ url: "http://supabase.test", publishableKey: "public-key" }),
+    consumeRateLimit: async () => ({ allowed: false, retryAfterSeconds: 42 }),
+    resolveEmail: async () => { lookupCalls += 1; return null; },
+    fetch: async () => { throw new Error("Auth must not be called for a rate-limited request"); },
+  });
+
+  const response = await handler(post(JSON.stringify({ username: "someone", password: "password" })));
+
+  assert.equal(response.status, 429);
+  assert.equal(response.headers.get("retry-after"), "42");
+  assert.equal(response.headers.get("cache-control"), "no-store");
+  assert.deepEqual(await response.json(), { error: "rate_limited" });
+  assert.equal(lookupCalls, 0);
 });

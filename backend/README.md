@@ -4,7 +4,7 @@ This is the backend side of the Alethia Project Mobile monorepo. It contains API
 
 Alethia Mobile uses Supabase Auth directly from its Kotlin client for email registration/sign-in and calls `POST /api/auth/username-login` for username sign-in. The API returns the verified session tokens and expiry fields; the native Auth client imports and stores that session using Android Keystore-backed encryption. Account deletion remains a backend endpoint for a later native profile flow. The Android dashboard still displays sample data.
 
-The hosted Supabase project **Alethia Mobile** is configured in Singapore (`ap-southeast-1`, ref `zbeaiphxmmwutzmqydlk`). The complete 48-migration schema has been applied. Local development remains available as a separate profile.
+The hosted Supabase project **Alethia Mobile** is configured in Singapore (`ap-southeast-1`, ref `zbeaiphxmmwutzmqydlk`). All 50 repository migrations are applied, including `20261114100000_limit_public_profile_to_basics.sql`. Local development remains available as a separate profile. The hosted project is being used as staging by project-owner direction; the Supabase CLI labels its environment `production`, so do not use it for real production data.
 
 Hosted email confirmation is disabled for the current testing setup (`auth.email.enable_confirmations = false`), so a new email/password signup returns an authenticated session immediately. Supabase Auth stores the credential; the `on_auth_user_created` trigger copies the submitted email and username into `public.profiles`. Re-enable confirmation and configure email delivery before production use.
 
@@ -32,7 +32,7 @@ pnpm db:reset
 pnpm db:test
 ```
 
-The API routes require the Supabase project to include the migrations. The linked hosted project has already received the checked-in migration chain. For later updates, review the target with `pnpm exec supabase db push --remote --dry-run` before applying migrations. The hosted database password is stored in the ignored `.env.local`; never commit or share that file.
+The API routes require the Supabase project to include the migrations. The linked hosted project currently matches all 50 repository migrations. Review future updates with `pnpm exec supabase db push --remote --dry-run` before applying them. The hosted database password is stored in the ignored `.env.local`; never commit or share that file.
 
 The Android hosted profile is stored in the ignored `../android/alethia.hosted.properties` file and contains only the public key. From this directory, build the app with `(cd ../android && ./gradlew :app:assembleDebug -PalethiaConfig=alethia.hosted.properties)`. Run the backend with `pnpm dev:hosted` so emulator requests to `10.0.2.2:3002` also use the hosted database. The backend secret key remains in `.env.hosted.local` and is never packaged into Android.
 
@@ -53,4 +53,4 @@ pnpm build
 
 API and database CI run independently based on changed paths. API CI uses the checked-in pnpm lockfile and runs lint, typecheck, unit tests, and a production build. Database CI starts an isolated local Supabase stack, resets it from migrations, runs pgTAP, and exercises username sign-up/login against local Supabase Auth. See [the backend architecture baseline](docs/ARCHITECTURE.md).
 
-Automatic deployment is intentionally not configured until a staging host, Supabase environment, and deployment secrets are defined. After connecting this repository to GitHub, protect `main` and require `Backend API CI / Required API checks` and `Supabase database CI / Required database checks` before merge.
+A manual Vercel Preview deployment is live with the username-login rate limiter. The Vercel project is already linked to `OzoraRR/Alethia-Mobile`; its root is `backend/` and Node.js is 24.x. Push-triggered deployments have not yet been verified. The Production branch is intentionally unset until a separate Production Supabase project and Production variables are ready; `release` is the intended branch for that future environment. The active GitHub ruleset `Protect Main` targets the default `main` branch and requires a pull request, one approval, and the `Required API checks` and `Required database checks` status checks. Android CI is available in this checkout but is not required by the current ruleset.

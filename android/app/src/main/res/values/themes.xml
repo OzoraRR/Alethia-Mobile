@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Alethia.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">#050B14</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/alethia_splash_icon</item>
+        <item name="postSplashScreenTheme">@style/Theme.Alethia</item>
+    </style>
+
+    <style name="Theme.Alethia" parent="android:style/Theme.Material.NoActionBar">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowActionModeOverlay">true</item>
+        <item name="android:windowBackground">#050B14</item>
+        <item name="android:colorAccent">#A6E86B</item>
+    </style>
+</resources>

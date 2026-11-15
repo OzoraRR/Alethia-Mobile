@@ -1,0 +1,5 @@
+# Required for local account flows. Offline practice/build can run without these values.
+ALETHIA_SUPABASE_URL=
+ALETHIA_SUPABASE_PUBLISHABLE_KEY=
+ALETHIA_API_BASE_URL=
+# Use only a public/publishable or legacy anon key. Never use a server secret.

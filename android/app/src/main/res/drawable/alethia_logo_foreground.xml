@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/alethia_logo"
+    android:insetLeft="31dp"
+    android:insetTop="31dp"
+    android:insetRight="31dp"
+    android:insetBottom="31dp" />

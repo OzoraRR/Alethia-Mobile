@@ -1,0 +1,56 @@
+# Android/backend integration
+
+Updated 15 November 2026.
+
+## Implemented flow
+
+The existing Compose screens use the same Supabase client as authentication. `AuthRepository` handles credentials and imports a complete user session after username login. `LearnerRepository` sends the caller JWT to Supabase REST/RPCs; no server secret is packaged in Android. `PracticeViewModel` exposes loading/error/data state, clears account data on logout/account changes, and preserves attempt IDs in SavedStateHandle for completion retries. The SDK handles session persistence and refresh; REST requests retry once after refreshing an expired JWT.
+
+| Feature | Backend boundary |
+| --- | --- |
+| Signup/email login | Supabase Kotlin Auth SDK |
+| Username login | `/api/auth/username-login`, then retrieve the authenticated user before importing the session |
+| Daily activity/streak | `record_daily_activity` with the device timezone; invoked on data refresh |
+| Dashboard, module access, EXP, quests, achievements | `get_dashboard_state` |
+| Quest reward | `claim_daily_quest` using assignment ID/date; no client points update |
+| Courier start/completion | `begin_verified_practice_attempt`, `complete_verified_practice_attempt` with ordered decision IDs; no client-authored score |
+| Reports | Own `practice_reports` rows with explicit owner filter and exact summary counts; basic SMS submission under RLS |
+| Notifications | Own notifications and `mark_notification_read` |
+| Profile language | Own `profiles.preferred_locale` under RLS, mirrored to DataStore |
+| Logout | Supabase Auth sign-out, then clear displayed account/practice state |
+
+Daily quests are assigned automatically by the existing backend; they have no separate server-side acceptance operation. The signed-in UI treats assigned quests as accepted and offers claim only after reaching the server target. Credits are not part of the backend model, so connected quest cards show the existing EXP reward only. Server quest titles, descriptions and progress replace preview objectives. Preview data remains limited to guest/debug preview usage.
+
+Failed writes keep the practice on its current step. Completing a server attempt is idempotent, so a lost completion response can be retried with the saved attempt ID. After completion, visible module completion is based on server access state, including the perfect-score requirement. Reports/notifications currently show the latest 100 personal rows; the report summary counts all personal rows. No schema migration is needed for this integration.
+
+## Run the matching environment
+
+Open `android/` in Android Studio.
+
+- Normal Run currently reads ignored `alethia.properties`, configured for hosted Supabase. Start the matching API from `backend/` using `pnpm dev:hosted`; the emulator uses `http://10.0.2.2:3002` for username login. Docker being active does not change the Android profile automatically.
+- For local Docker, run `pnpm db:start` and `pnpm dev:local` from `backend/`, then build with `./gradlew :app:assembleDebug -PalethiaConfig=alethia.local.properties` from `android/`.
+- The local and hosted API processes both use port 3002; stop one before starting the other. Do not point the app at hosted Auth and a local-database username-login API.
+- For a physical phone, the emulator host address is unsuitable; configure a reachable HTTPS API URL and the corresponding Supabase profile.
+
+## Validation
+
+Connected Android instrumentation creates synthetic accounts only when the Supabase hostname is local. It exercises daily activity, exact report counts, idempotent claims, scoring at 75 and 100, idempotent completion, report submission, achievements, notification reads, persisted locale and data after username re-login. The Compose connected journey checks that username login renders real account data and logout returns to the landing page. Cleanup uses the existing account-deletion API. Guest journeys cover practice and recreation separately.
+
+```sh
+# backend/: local Supabase must already be running
+pnpm dev:local
+
+# android/: running emulator required
+./gradlew :core:test :app:lintDebug :app:connectedDebugAndroidTest -PalethiaConfig=alethia.local.properties
+```
+
+Validation on 15 November: Android 17 / 16 KB emulator, all 6 instrumentation tests passed against Docker local Supabase, JVM tests passed, and lint completed with zero errors. Synthetic test accounts were deleted. Hosted accounts were not used for this automated integration run.
+
+## Frontend features still to build
+
+- Actual social-engineering and malicious-document simulations. Their visual roadmap remains a placeholder even when the server prerequisites are met.
+- Report editing, deletion, pagination, additional categories and community interactions; current form is explicitly SMS-only.
+- Full profile editing, avatar controls, export/deletion UI and password recovery.
+- Notification/achievement presentation refinement and pagination beyond the first 100 list rows.
+
+The existing server APIs for some of these features are available, but their Android user flows do not exist yet. Hosted end-to-end testing and release configuration remain separate follow-up work.

@@ -1,0 +1,160 @@
+name: Android CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    name: Detect Android changes
+    runs-on: ubuntu-24.04
+    outputs:
+      android: ${{ steps.filter.outputs.android }}
+    steps:
+      - name: Check out source history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Decide whether Android checks are needed
+        id: filter
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: bash .github/scripts/detect-changes-android.sh
+
+  android:
+    name: JVM tests, Android lint and debug APK
+    needs: changes
+    if: needs.changes.outputs.android == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          # Match android/gradle/gradle-daemon-jvm.properties.
+          java-version: '25'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4
+
+      - name: Install required SDK components
+        run: sdkmanager 'platforms;android-37.0' 'build-tools;36.0.0'
+
+      - name: Configure Gradle and validate wrapper
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6
+
+      - name: Run JVM tests, Android lint and debug build
+        run: ./gradlew --no-daemon :core:test :app:lintDebug :app:assembleDebug
+
+      - name: Upload debug APK
+        if: success()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: alethia-mobile-debug-${{ github.sha }}
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7
+
+  instrumentation:
+    name: Android 17 instrumentation tests
+    needs: changes
+    if: needs.changes.outputs.android == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          # Match android/gradle/gradle-daemon-jvm.properties.
+          java-version: '25'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4
+
+      - name: Install compile SDK and build tools
+        run: sdkmanager 'platforms;android-37.0' 'build-tools;36.0.0'
+
+      - name: Configure Gradle and validate wrapper
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run Android 17 device tests
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          # Android 37's platform SDK package is 37.0; the 37.1 system image
+          # provides the API 37 16 KB page-size emulator used by these tests.
+          api-level: '37.0'
+          system-image-api-level: 37.1
+          target: google_apis_ps16k
+          arch: x86_64
+          profile: pixel_6
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: cd android && ./gradlew --no-daemon :app:connectedDebugAndroidTest
+
+      - name: Upload instrumentation reports on failure
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: alethia-android-test-failure-${{ github.sha }}
+          path: |
+            android/app/build/outputs/androidTest-results/connected/**
+            android/app/build/reports/androidTests/connected/**
+          if-no-files-found: ignore
+          retention-days: 7
+
+  required:
+    name: Required Android checks
+    if: always()
+    needs: [changes, android, instrumentation]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Evaluate required checks
+        env:
+          CHANGE_RESULT: ${{ needs.changes.result }}
+          ANDROID_CHANGED: ${{ needs.changes.outputs.android }}
+          ANDROID_RESULT: ${{ needs.android.result }}
+          INSTRUMENTATION_RESULT: ${{ needs.instrumentation.result }}
+        run: |
+          if [[ "$CHANGE_RESULT" != "success" ]]; then
+            echo "Change detection failed."
+            exit 1
+          fi
+          if [[ "$ANDROID_CHANGED" == "true" && "$ANDROID_RESULT" != "success" ]]; then
+            echo "Android verification did not succeed: $ANDROID_RESULT"
+            exit 1
+          fi
+          if [[ "$ANDROID_CHANGED" == "true" && "$INSTRUMENTATION_RESULT" != "success" ]]; then
+            echo "Instrumentation verification did not succeed: $INSTRUMENTATION_RESULT"
+            exit 1
+          fi
+          echo "All required Android checks succeeded or were not needed."

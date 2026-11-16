@@ -20,6 +20,11 @@
 
 begin;
 
+-- These admin list assertions cover the entire report collection. Isolate
+-- fixtures from developer data inside this transaction; ROLLBACK below restores
+-- every existing report and all related rows. Never reset the developer DB.
+truncate table public.practice_reports cascade;
+
 select plan(25);
 
 -- ---------------------------------------------------------------------------

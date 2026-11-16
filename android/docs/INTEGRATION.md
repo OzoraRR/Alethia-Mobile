@@ -27,7 +27,7 @@ Failed writes keep the practice on its current step. Completing a server attempt
 
 Open `android/` in Android Studio.
 
-- Normal Run currently reads ignored `alethia.properties`, configured for hosted Supabase. Start the matching API from `backend/` using `pnpm dev:hosted`; the emulator uses `http://10.0.2.2:3002` for username login. Docker being active does not change the Android profile automatically.
+- Normal Run reads ignored `alethia.properties`, configured for hosted Supabase and, after the 16 November environment audit, the verified Vercel Production HTTPS API. This mode does not require a local API process. For API development against hosted Supabase, `pnpm dev:hosted` is still available; explicitly use `http://10.0.2.2:3002` in Android only when testing that local process. Docker being active does not change the Android profile automatically.
 - For local Docker, run `pnpm db:start` and `pnpm dev:local` from `backend/`, then build with `./gradlew :app:assembleDebug -PalethiaConfig=alethia.local.properties` from `android/`.
 - The local and hosted API processes both use port 3002; stop one before starting the other. Do not point the app at hosted Auth and a local-database username-login API.
 - For a physical phone, the emulator host address is unsuitable; configure a reachable HTTPS API URL and the corresponding Supabase profile.

@@ -47,7 +47,7 @@ The hosted project `Alethia Mobile` is in Singapore and uses ref `zbeaiphxmmwutz
 ./gradlew :app:assembleDebug -PalethiaConfig=alethia.hosted.properties
 ```
 
-Run the backend from `../backend` with `pnpm dev:hosted`; that loads `.env.hosted.local` and serves port `3002`, which the Android emulator reaches at `10.0.2.2:3002`. The local Docker Supabase configuration remains available through `alethia.local.properties` and `pnpm dev:local`. Hosted email sign-up now creates a session immediately, with no confirmation email step.
+After the 16 November environment audit, the workstation hosted/default profile uses the verified Vercel Production HTTPS API and does not need a local API process. For API development against hosted Supabase, run `pnpm dev:hosted` from `../backend` and explicitly point the Android API URL at `http://10.0.2.2:3002`. See [handoff setup](../docs/HANDOFF.md). The local Docker Supabase configuration remains available through `alethia.local.properties` and `pnpm dev:local`. Hosted email sign-up now creates a session immediately, with no confirmation email step.
 
 Local and hosted Supabase email confirmation are disabled for the current test setup. Supabase Auth stores the email and password credential, while the signup trigger copies the submitted username and email into `public.profiles`. Passwords are never copied into the profile table or stored as plaintext.
 

@@ -1,6 +1,8 @@
 # Alethia Mobile backend security framework
 
 **Review date:** 14 November 2026
+**Environment update, 16 November:** Android source/CI is now on GitHub, rulesets are disabled by owner choice, and GitHub-triggered Vercel deployment is verified. The owner subsequently configured Production variables and redeployed; synthetic hosted account flows and deletion through the Production domain passed. The Supabase database remains the existing development/staging target. See [the latest audit](../docs/ENVIRONMENT_AUDIT_2026-11-16.md). The review below retains the earlier security evidence and historical follow-up list.
+
 **Scope:** the Kotlin Android client, the Next.js API service in `backend/`, and the checked-in Supabase migrations/tests.
 
 This is a repository-based security baseline, not a penetration test or certification. The earlier browser/Netlify review is preserved as [historical material](docs/SECURITY_FRAMEWORK_WEB_LEGACY.md); it describes a different application snapshot and must not be used as evidence about this mobile backend.

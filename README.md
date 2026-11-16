@@ -2,6 +2,8 @@
 
 Monorepo for the native Alethia Android app and its API/database backend. The source boundaries remain separate so Android, API, and database changes can be reviewed and checked independently.
 
+Panduan untuk rekan pengembang: [HANDOFF.md](docs/HANDOFF.md). Hasil pemeriksaan lingkungan: [audit 16 November](docs/ENVIRONMENT_AUDIT_2026-11-16.md).
+
 ## Layout
 
 | Directory | Contents | Open/run from |
@@ -34,7 +36,7 @@ git add .gitignore .vercelignore SECURITY.md backend \
   .github/workflows/supabase-database.yml
 ```
 
-This stages backend source, its database/API CI, and shared repository metadata. Stage `android/` and its workflow separately when ready.
+This stages backend source, its database/API CI, and shared repository metadata. Android source dan workflow sudah masuk `main`; gunakan staging file sesuai lingkup perubahan.
 
 ## Android development
 

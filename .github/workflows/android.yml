@@ -101,6 +101,10 @@ jobs:
       - name: Configure Gradle and validate wrapper
         uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6
 
+      - name: Build device-test APKs before starting the emulator
+        # Keep CI guest tests independent of hosted credentials and network.
+        run: ./gradlew --no-daemon --max-workers=2 :app:assembleDebug :app:assembleDebugAndroidTest -PalethiaConfig=alethia.properties.example
+
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -117,9 +121,11 @@ jobs:
           target: google_apis_ps16k
           arch: x86_64
           profile: pixel_6
-          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
+          emulator-options: -no-window -gpu swiftshader -no-snapshot -noaudio -no-boot-anim -camera-back none -memory 2048 -cores 2
           disable-animations: true
-          script: cd android && ./gradlew --no-daemon :app:connectedDebugAndroidTest
+          script: |
+            bash android/scripts/wait-for-emulator.sh
+            cd android && ./gradlew --no-daemon --max-workers=2 --no-parallel :app:connectedDebugAndroidTest -PalethiaConfig=alethia.properties.example
 
       - name: Upload instrumentation reports on failure
         if: failure()

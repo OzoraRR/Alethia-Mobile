@@ -67,6 +67,7 @@ fun AlethiaApp(model: PracticeViewModel, authModel: AuthViewModel) {
         }
         val dashboardUiState by model.dashboardUiState.collectAsStateWithLifecycle()
         val backend by model.backend.collectAsStateWithLifecycle()
+        val profileMessage by model.profileMessage.collectAsStateWithLifecycle()
         val authSession by authModel.sessionState.collectAsStateWithLifecycle()
         val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
         DisposableEffect(lifecycleOwner) {
@@ -104,24 +105,21 @@ fun AlethiaApp(model: PracticeViewModel, authModel: AuthViewModel) {
                             model.navigate(Screen.Notifications)
                         },
                         onProfile = { model.navigate(Screen.Profile) },
+                        language = language,
+                        onLanguageChange = model::setLanguage,
                     )
                 } else if (screen == Screen.Welcome) {
-                    LandingTopBar()
+                    LandingTopBar(language, model::setLanguage)
+                } else if (screen == Screen.Profile || screen == Screen.EditProfile) {
+                    ProfileTopBar(language, model::setLanguage) { model.navigate(backDestination(screen, courierParent)) }
                 } else {
                     Surface(color = Navy950) {
                         Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 16.dp, vertical = 8.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween) {
+                            horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                             TextButton(onClick = { model.navigate(backDestination(screen, courierParent)) }) {
                                 Text(stringResource(R.string.back))
                             }
-                            if (screen != Screen.Profile) {
-                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    FilterChip(selected = language == "id", onClick = { model.setLanguage("id") },
-                                        label = { Text("ID") }, modifier = Modifier.testTag("language_id"))
-                                    FilterChip(selected = language == "en", onClick = { model.setLanguage("en") },
-                                        label = { Text("EN") }, modifier = Modifier.testTag("language_en"))
-                                }
-                            }
+                            LanguageMenu(language, model::setLanguage)
                         }
                     }
                 }
@@ -205,11 +203,19 @@ fun AlethiaApp(model: PracticeViewModel, authModel: AuthViewModel) {
                             Screen.Notifications -> LearnerListScreen(R.string.notifications_title, backend.snapshot?.notifications.orEmpty(), backend.signedIn,
                                 onRead = { model.readNotification(it) })
                             Screen.Profile -> ProfileScreen(
-                                language = language,
-                                onLanguageChange = model::setLanguage,
-                                displayName = dashboardUiState.displayName.takeIf { backend.signedIn },
+                                profile = backend.snapshot?.profile,
+                                onEdit = { model.clearProfileMessage(); model.navigate(Screen.EditProfile) },
+                                onBadge = model::toggleBadge,
                                 onSignOut = model::signOut,
                                 busy = backend.busy,
+                                message = profileMessage,
+                            )
+                            Screen.EditProfile -> EditProfileScreen(
+                                profile = backend.snapshot?.profile,
+                                busy = backend.busy,
+                                message = profileMessage,
+                                onSave = model::saveProfile,
+                                onCancel = { model.clearProfileMessage(); model.navigate(Screen.Profile) },
                             )
                             Screen.Welcome -> Unit
                             }
@@ -232,6 +238,7 @@ private fun backDestination(screen: Screen, courierParent: Screen): Screen = whe
     Screen.ModuleRoadmapPhishing, Screen.ModuleRoadmapSocialEngineering, Screen.ModuleRoadmapMaliciousDocument -> Screen.Modules
     Screen.Courier -> courierParent
     Screen.Achievements, Screen.Reports, Screen.Notifications, Screen.Profile -> Screen.Dashboard
+    Screen.EditProfile -> Screen.Profile
 }
 
 @Composable
@@ -266,7 +273,7 @@ private val LandingGreenShadow = Color(0xFF263F0D)
 private val LandingFooter = Color(0xFF4E6074)
 
 @Composable
-private fun LandingTopBar() {
+private fun LandingTopBar(language: String, onLanguageChange: (String) -> Unit) {
     Surface(color = LandingHeader) {
         Column {
             Row(
@@ -274,6 +281,7 @@ private fun LandingTopBar() {
                     .statusBarsPadding()
                     .padding(horizontal = 16.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     AlethiaLogo(modifier = Modifier.size(42.dp))
@@ -286,6 +294,7 @@ private fun LandingTopBar() {
                         fontSize = 19.sp,
                     )
                 }
+                LanguageMenu(language, onLanguageChange)
             }
             Box(Modifier.fillMaxWidth().height(1.dp).background(LandingRule))
         }

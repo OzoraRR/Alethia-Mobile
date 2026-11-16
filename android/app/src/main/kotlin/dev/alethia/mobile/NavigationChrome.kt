@@ -70,6 +70,8 @@ fun DashboardTopBar(
     hasUnreadNotifications: Boolean = false,
     onNotifications: () -> Unit,
     onProfile: () -> Unit,
+    language: String,
+    onLanguageChange: (String) -> Unit,
 ) {
     Surface(color = Navy950) {
         val notificationIcon = if (hasUnreadNotifications) {
@@ -107,6 +109,7 @@ fun DashboardTopBar(
                 IconButton(onClick = onProfile, modifier = Modifier.size(40.dp).testTag("open_profile")) {
                     Icon(painterResource(R.drawable.ic_profile), contentDescription = stringResource(R.string.profile_title), tint = Ice)
                 }
+                LanguageMenu(language, onLanguageChange)
             }
         }
     }

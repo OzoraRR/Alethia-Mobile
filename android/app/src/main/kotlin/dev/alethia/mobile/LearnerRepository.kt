@@ -79,12 +79,14 @@ class LearnerRepository(
         // Explicit owner filters keep community-visible reports out of the personal list.
         val reports = JSONArray(request("practice_reports?user_id=eq.$owner&select=id,title,review_status,created_at&order=created_at.desc&limit=100"))
         val notifications = JSONArray(request("notifications?user_id=eq.$owner&select=id,title,body,is_read,created_at&order=created_at.desc&limit=100"))
+        val selectedBadges = JSONArray(request("user_profile_badges?user_id=eq.$owner&selected=eq.true&select=badge_code"))
+        val investigationCount = request("report_investigation_notes?user_id=eq.$owner&select=id", "HEAD").toInt()
         val counts = JSONArray()
         for (status in listOf("approved", "queued", "rejected")) {
             val count = request("practice_reports?user_id=eq.$owner&review_status=eq.$status&select=id", "HEAD").toInt()
             counts.put(JSONObject().put("review_status", status).put("count", count))
         }
-        return parseLearnerSnapshot(state, reports, notifications, counts)
+        return parseLearnerSnapshot(state, reports, notifications, counts, selectedBadges, investigationCount)
     }
 
     suspend fun beginAttempt(): String = org.json.JSONTokener(
@@ -114,10 +116,40 @@ class LearnerRepository(
         val owner = client.auth.currentUserOrNull()?.id ?: error("Authentication required")
         request("profiles?id=eq.$owner", "PATCH", JSONObject().put("preferred_locale", locale))
     }
+
+    suspend fun setDisplayName(name: String) {
+        val owner = client.auth.currentUserOrNull()?.id ?: error("Authentication required")
+        request("profiles?id=eq.$owner", "PATCH", JSONObject().put("display_name", name.trim()))
+    }
+
+    suspend fun setPassword(password: String) {
+        client.auth.updateUser { this.password = password }
+    }
+
+    suspend fun setBadge(code: String, selected: Boolean) {
+        rpc("set_profile_badge", JSONObject().put("requested_badge_code", code).put("requested_selected", selected))
+    }
 }
 
 class LearnerRequestException(val status: Int) : Exception("Learner API request failed ($status)")
 data class LearnerRow(val id: String, val title: String, val detail: String, val isRead: Boolean = true)
+data class ProfileState(
+    val username: String,
+    val displayName: String,
+    val level: Int,
+    val points: Int,
+    val modulesCompleted: Int,
+    val mastery: String,
+    val dailyCurrent: Int,
+    val dailyLongest: Int,
+    val practiceCurrent: Int,
+    val practiceLongest: Int,
+    val unlockedBadges: Set<String>,
+    val equippedBadges: Set<String>,
+    val reportCount: Int,
+    val approvedReportCount: Int,
+    val investigationCount: Int,
+)
 data class LearnerSnapshot(
     val dashboard: DashboardUiState,
     val modules: Map<String, String>,
@@ -125,9 +157,10 @@ data class LearnerSnapshot(
     val reports: List<LearnerRow>,
     val notifications: List<LearnerRow>,
     val locale: String,
+    val profile: ProfileState,
 )
 
-internal fun parseLearnerSnapshot(state: JSONObject, reports: JSONArray, notifications: JSONArray, counts: JSONArray): LearnerSnapshot {
+internal fun parseLearnerSnapshot(state: JSONObject, reports: JSONArray, notifications: JSONArray, counts: JSONArray, selectedBadges: JSONArray = JSONArray(), investigationCount: Int = 0): LearnerSnapshot {
     val profile = state.getJSONObject("profile")
     val points = profile.getInt("points")
     val quests = state.getJSONArray("quests").objects().mapNotNull { q ->
@@ -143,10 +176,14 @@ internal fun parseLearnerSnapshot(state: JSONObject, reports: JSONArray, notific
             title = q.getString("title"), description = q.getString("description"))
     }
     val reportCounts = counts.objects().associate { it.getString("review_status") to it.getInt("count") }
+    val unlocked = state.getJSONArray("achievements").objects().map { it.getString("code") }.toSet()
+    val daily = state.getJSONObject("dailyStreak")
+    val practice = state.getJSONObject("practiceStreak")
+    val name = profile.optString("displayName").takeUnless { it.isBlank() || it == "null" } ?: profile.getString("username")
     return LearnerSnapshot(
         dashboard = DashboardUiState(
-            displayName = profile.optString("displayName").takeUnless { it.isBlank() || it == "null" } ?: profile.getString("username"),
-            streakDays = state.getJSONObject("dailyStreak").getInt("current"), points = points,
+            displayName = name,
+            streakDays = daily.getInt("current"), points = points,
             pointsForNextLevel = listOf(60, 150, 300, 550).firstOrNull { it > points } ?: maxOf(550, points),
             quests = quests, isPreview = false,
             hasUnreadNotifications = state.getJSONObject("notifications").getInt("unread") > 0,
@@ -157,6 +194,18 @@ internal fun parseLearnerSnapshot(state: JSONObject, reports: JSONArray, notific
         reports = reports.objects().map { LearnerRow(it.getString("id"), it.getString("title"), it.getString("review_status")) },
         notifications = notifications.objects().map { LearnerRow(it.getString("id"), it.getString("title"), it.getString("body"), it.getBoolean("is_read")) },
         locale = profile.getString("preferredLocale"),
+        profile = ProfileState(
+            username = profile.getString("username"), displayName = name,
+            level = profile.optInt("level", state.optInt("level", 1)), points = points,
+            modulesCompleted = profile.optInt("modulesCompleted"), mastery = profile.optString("mastery", "none"),
+            dailyCurrent = daily.getInt("current"), dailyLongest = daily.getInt("longest"),
+            practiceCurrent = practice.getInt("current"), practiceLongest = practice.getInt("longest"),
+            unlockedBadges = unlocked,
+            equippedBadges = selectedBadges.objects().map { it.getString("badge_code") }.toSet(),
+            reportCount = reportCounts.values.sum(),
+            approvedReportCount = reportCounts["approved"] ?: 0,
+            investigationCount = investigationCount,
+        ),
     )
 }
 private fun JSONArray.objects() = (0 until length()).map { getJSONObject(it) }

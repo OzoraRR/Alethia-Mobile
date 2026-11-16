@@ -1,6 +1,6 @@
 # Alethia Mobile — Android
 
-The native Android app includes Compose landing/login/register, ID/EN preferences, an account-backed dashboard, and Courier SMS training. Signed-in dashboard names, streaks, EXP, daily quests, achievements, notifications and report counts come from Supabase. Verified training attempts and quest rewards are computed by server RPCs. Guest training remains offline. Reports support a basic SMS phishing submission and personal list; profile supports language and logout. Social engineering and malicious-document training remain frontend placeholders. See [integration details](docs/INTEGRATION.md).
+The native Android app includes Compose landing/login/register, an ID/EN language menu in every top bar, an account-backed dashboard, and Courier SMS training. Signed-in dashboard names, streaks, EXP, daily quests, achievements, notifications and report counts come from Supabase. Verified training attempts and quest rewards are computed by server RPCs. Guest training remains offline. Reports support a basic SMS phishing submission and personal list; profile shows level, streaks and badges, and supports display-name/password editing, badge selection and logout. Social engineering and malicious-document training remain frontend placeholders. See [integration details](docs/INTEGRATION.md).
 
 
 ## Start now

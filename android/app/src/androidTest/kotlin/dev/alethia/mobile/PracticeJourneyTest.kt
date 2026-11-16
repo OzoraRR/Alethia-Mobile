@@ -26,7 +26,11 @@ class PracticeJourneyTest {
             app.container.client?.auth?.clearSession()
             LanguagePreferences(app).setLanguage("id")
         }
-        compose.runOnIdle { ViewModelProvider(compose.activity)[PracticeViewModel::class.java].navigate(Screen.Welcome) }
+        compose.runOnIdle {
+            val model = ViewModelProvider(compose.activity)[PracticeViewModel::class.java]
+            model.restart()
+            model.navigate(Screen.Welcome)
+        }
         compose.waitForIdle()
     }
 
@@ -75,11 +79,21 @@ class PracticeJourneyTest {
     }
 
     @Test fun languageChoiceSurvivesActivityRecreation() {
+        compose.onNodeWithTag("language_option_en").assertDoesNotExist()
+        compose.onNodeWithTag("language_globe").performClick()
+        compose.onNodeWithTag("language_option_en").assertExists()
+        compose.onNodeWithTag("language_option_en").performClick()
         click("open_training")
         compose.onNodeWithTag("open_profile").performClick()
-        compose.onNodeWithTag("profile_language_en").performScrollTo().performClick()
-        compose.waitForIdle()
+        compose.onNodeWithTag("language_globe").assertExists()
         compose.activityRule.scenario.recreate()
-        compose.onNodeWithTag("profile_language_en").assertIsSelected()
+        compose.onNodeWithTag("language_globe").performClick()
+        compose.onNodeWithTag("language_option_en").assertIsSelected()
+    }
+
+    @Test fun globeIsAvailableOnWelcomeAndLogin() {
+        compose.onNodeWithTag("language_globe").assertExists()
+        compose.onNodeWithTag("start_auth").performClick()
+        compose.onNodeWithTag("language_globe").assertExists()
     }
 }

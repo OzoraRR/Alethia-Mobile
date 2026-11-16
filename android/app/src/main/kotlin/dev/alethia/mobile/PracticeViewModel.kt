@@ -22,7 +22,7 @@ import kotlinx.coroutines.launch
 enum class Screen {
     Welcome, Login, SignUp, Dashboard, Modules, Catalog,
     ModuleRoadmapPhishing, ModuleRoadmapSocialEngineering, ModuleRoadmapMaliciousDocument,
-    Courier, Achievements, Reports, Notifications, Profile,
+    Courier, Achievements, Reports, Notifications, Profile, EditProfile,
 }
 
 class PracticeViewModel(
@@ -34,6 +34,8 @@ class PracticeViewModel(
     val dashboardUiState = mutableDashboardUiState.asStateFlow()
     private val mutableBackend = MutableStateFlow(LearnerUiState())
     val backend = mutableBackend.asStateFlow()
+    private val mutableProfileMessage = MutableStateFlow<Int?>(null)
+    val profileMessage = mutableProfileMessage.asStateFlow()
     private var owner: String? = null
     private var operationJob: Job? = null
     private var localeJob: Job? = null
@@ -47,6 +49,7 @@ class PracticeViewModel(
                 localeRestored = false
                 val oldOwner = owner
                 owner = identity
+                mutableProfileMessage.value = null
                 mutableBackend.value = LearnerUiState(signedIn = identity != null)
                 if (identity != null) {
                     mutableDashboardUiState.value = emptyDashboard()
@@ -95,6 +98,46 @@ class PracticeViewModel(
     }
     fun refreshBackend() { operation { refreshSnapshot() } }
     fun signOut() { operation { repository!!.signOut() } }
+    fun clearProfileMessage() { mutableProfileMessage.value = null }
+    fun saveProfile(name: String, password: String, confirmation: String) {
+        val trimmed = name.trim()
+        mutableProfileMessage.value = when {
+            trimmed.length !in 3..32 -> R.string.profile_name_invalid
+            password.isNotEmpty() && (password.length < 8 || !password.any(Char::isLetter) || !password.any(Char::isDigit)) -> R.string.profile_password_invalid
+            password != confirmation -> R.string.auth_password_mismatch
+            else -> null
+        }
+        if (mutableProfileMessage.value != null) return
+        operation {
+            try {
+                if (password.isNotEmpty()) repository!!.setPassword(password)
+                if (trimmed != mutableBackend.value.snapshot?.profile?.displayName) repository!!.setDisplayName(trimmed)
+                refreshSnapshot()
+                mutableProfileMessage.value = R.string.profile_saved
+                navigate(Screen.Profile)
+            } catch (cancelled: CancellationException) { throw cancelled }
+            catch (error: LearnerRequestException) {
+                mutableProfileMessage.value = if (error.status == 401 || error.status == 403) R.string.profile_auth_error else R.string.profile_save_error
+            } catch (_: Exception) { mutableProfileMessage.value = R.string.profile_save_error }
+        }
+    }
+    fun toggleBadge(code: String) {
+        val profile = mutableBackend.value.snapshot?.profile ?: return
+        if (code !in profile.unlockedBadges) return
+        val selected = code !in profile.equippedBadges
+        if (selected && profile.equippedBadges.size >= 3) {
+            mutableProfileMessage.value = R.string.profile_badge_limit
+            return
+        }
+        operation {
+            try {
+                repository!!.setBadge(code, selected)
+                refreshSnapshot()
+                mutableProfileMessage.value = null
+            } catch (cancelled: CancellationException) { throw cancelled }
+            catch (_: Exception) { mutableProfileMessage.value = R.string.profile_badge_error }
+        }
+    }
     fun submitReport(title: String, evidence: String, risk: String) {
         operation {
             repository!!.submitReport(title, evidence, risk)

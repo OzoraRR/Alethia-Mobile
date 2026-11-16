@@ -1,6 +1,6 @@
 # Android/backend integration
 
-Updated 15 November 2026.
+Updated 16 November 2026.
 
 ## Implemented flow
 
@@ -16,7 +16,9 @@ The existing Compose screens use the same Supabase client as authentication. `Au
 | Courier start/completion | `begin_verified_practice_attempt`, `complete_verified_practice_attempt` with ordered decision IDs; no client-authored score |
 | Reports | Own `practice_reports` rows with explicit owner filter and exact summary counts; basic SMS submission under RLS |
 | Notifications | Own notifications and `mark_notification_read` |
-| Profile language | Own `profiles.preferred_locale` under RLS, mirrored to DataStore |
+| App language menu | Available from the globe in every top bar; own `profiles.preferred_locale` under RLS, mirrored to DataStore |
+| Profile name and password | Own `profiles.display_name` PATCH; password through Supabase Auth |
+| Profile badges | `user_achievements` is the unlock source; `user_profile_badges.selected` is the equipped state, changed only by `set_profile_badge` (maximum three after the profile badge migration) |
 | Logout | Supabase Auth sign-out, then clear displayed account/practice state |
 
 Daily quests are assigned automatically by the existing backend; they have no separate server-side acceptance operation. The signed-in UI treats assigned quests as accepted and offers claim only after reaching the server target. Credits are not part of the backend model, so connected quest cards show the existing EXP reward only. Server quest titles, descriptions and progress replace preview objectives. Preview data remains limited to guest/debug preview usage.
@@ -50,7 +52,7 @@ Validation on 15 November: Android 17 / 16 KB emulator, all 6 instrumentation te
 
 - Actual social-engineering and malicious-document simulations. Their visual roadmap remains a placeholder even when the server prerequisites are met.
 - Report editing, deletion, pagination, additional categories and community interactions; current form is explicitly SMS-only.
-- Full profile editing, avatar controls, export/deletion UI and password recovery.
+- Avatar controls, export/deletion UI and password recovery. Display-name and password editing are available on the Edit Profile screen.
 - Notification/achievement presentation refinement and pagination beyond the first 100 list rows.
 
 The existing server APIs for some of these features are available, but their Android user flows do not exist yet. Hosted end-to-end testing and release configuration remain separate follow-up work.

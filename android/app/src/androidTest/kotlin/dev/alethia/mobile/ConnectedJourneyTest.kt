@@ -53,6 +53,23 @@ class ConnectedJourneyTest {
             compose.waitUntil(20000) { compose.onAllNodesWithTag("open_profile").fetchSemanticsNodes().isNotEmpty() &&
                 compose.onAllNodesWithText(username, substring = true).fetchSemanticsNodes().isNotEmpty() }
             compose.onNodeWithTag("open_profile").performClick()
+            compose.onNodeWithTag("open_edit_profile").performScrollTo().performClick()
+            compose.onNodeWithTag("edit_name_field").performTextClearance()
+            compose.onNodeWithTag("edit_name_field").performTextInput("Edited Learner")
+            compose.onNodeWithTag("save_profile").performScrollTo().performClick()
+            compose.waitUntil(15000) { compose.onAllNodesWithText("Edited Learner").fetchSemanticsNodes().isNotEmpty() }
+            runBlocking {
+                val app = InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as AlethiaApplication
+                app.container.learnerRepository!!.submitReport("UI test report", "Synthetic message", "Suspicious link")
+            }
+            lateinit var profileModel: PracticeViewModel
+            compose.runOnIdle {
+                profileModel = ViewModelProvider(compose.activity)[PracticeViewModel::class.java]
+                profileModel.refreshBackend()
+            }
+            compose.waitUntil(15000) { compose.onAllNodesWithTag("equipped_badge_first_report").fetchSemanticsNodes().isNotEmpty() }
+            compose.onNodeWithTag("equipped_badge_first_report").performScrollTo().performClick()
+            compose.waitUntil(15000) { "first_report" in profileModel.backend.value.snapshot?.profile?.equippedBadges.orEmpty() }
             compose.onNodeWithTag("sign_out").performScrollTo().performClick()
             compose.waitUntil(15000) { compose.onAllNodesWithTag("start_auth").fetchSemanticsNodes().isNotEmpty() }
             compose.onAllNodesWithText(username, substring = true).assertCountEquals(0)

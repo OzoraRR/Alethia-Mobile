@@ -40,6 +40,8 @@ This stages backend source, its database/API CI, and shared repository metadata.
 
 ## Android development
 
+For frontend development, clone the repo, open `android/`, let Gradle Sync finish and click **Run app**. Public hosted configuration is included; no local backend or provider CLI setup is needed.
+
 Open [`android/`](android/) itself in Android Studio. Its Gradle root remains there, so existing Android Studio workflows and `./gradlew` commands stay scoped to the native app:
 
 ```sh

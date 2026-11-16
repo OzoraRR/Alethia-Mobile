@@ -7,7 +7,17 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
-val configFile = rootProject.file(providers.gradleProperty("alethiaConfig").orElse("alethia.properties").get())
+// A fresh clone can run against the shared hosted backend. A developer's local
+// profile overrides the whole config; missing fields never mix two databases.
+val requestedProfile = providers.gradleProperty("alethiaConfig").orNull
+val configFile = when {
+    requestedProfile != null -> rootProject.file(requestedProfile)
+    rootProject.file("alethia.properties").isFile -> rootProject.file("alethia.properties")
+    else -> rootProject.file("config/hosted.properties")
+}
+require(configFile.isFile) {
+    "Alethia config file not found: ${configFile.name}. Use config/hosted.properties or create a local profile."
+}
 val localConfig = Properties().apply {
     configFile.takeIf { it.exists() }?.inputStream()?.use { load(it) }
 }

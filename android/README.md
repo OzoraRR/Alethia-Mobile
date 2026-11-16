@@ -5,8 +5,9 @@ The native Android app includes Compose landing/login/register, ID/EN preference
 
 ## Start now
 
-On the current workstation, `local.properties` has already been configured with the installed SDK path. Android Studio and an Android SDK/emulator are already installed. The app can use either hosted Supabase or the local Docker stack.
+For a new developer: clone the repository, open `android/` in Android Studio, let Gradle Sync finish, select an emulator/phone, then **Run app**. The tracked `config/hosted.properties` provides the shared hosted backend automatically. Docker, Node.js and provider CLI login are not needed for frontend development. Android Studio needs the SDK components listed below.
 
+An ignored local `alethia.properties` overrides the shared profile. Use `-PalethiaConfig=...` to select another complete profile; environment variables take precedence. Shared configuration contains only public URLs and a publishable key.
 From this directory:
 
 ```sh
@@ -15,13 +16,13 @@ From this directory:
 
 The debug APK is written to `app/build/outputs/apk/debug/app-debug.apk`. Install/run the `app` configuration from Android Studio, or use `adb install -r app/build/outputs/apk/debug/app-debug.apk` with an emulator/device connected.
 
-The checked-in Gradle wrapper supplies Gradle; a separate system Gradle installation is not required. This workstation builds using its installed JDK 25. For a different machine or CI, use JDK 17 or a supported newer JDK and configure Android Studio's Gradle JDK accordingly. No global Java settings were changed.
+The checked-in Gradle wrapper supplies Gradle; a separate system Gradle installation is not required. This workstation builds using its installed JDK 25. For a different machine or CI, use JDK 25 to match the project daemon configuration. No global Java settings were changed.
 
 For another workstation, install Android SDK Platform 37 and Build Tools 36.0.0, accept the SDK licenses, and let Android Studio write `local.properties` (or set `ANDROID_HOME`). API 37 is needed to compile the selected Compose dependencies. The app still targets API 36 and supports Android 8.0/API 26 and later.
 
 ## CI and release status
 
-The Android GitHub Actions workflow in this checkout runs JVM tests, Android lint, Android 17 instrumentation tests, and a debug APK build when Android source or Gradle configuration changes. It uploads the APK as a short-lived build artifact. The workflow and Android source have not yet been pushed to GitHub, so these checks have not run there. The active `Protect Main` ruleset already requires `Required Android checks`; verify that status in GitHub after the planned push/PR. Release signing and store deployment are not configured yet.
+Android source and CI are on GitHub. The workflow checks JVM tests, lint, emulator instrumentation and a debug APK; it passed for `e543ac9`. GitHub rulesets are currently disabled by owner choice. Release signing and store deployment remain unconfigured.
 
 See [the architecture baseline](docs/ARCHITECTURE.md) for where to make UI, domain, and future data-layer changes.
 

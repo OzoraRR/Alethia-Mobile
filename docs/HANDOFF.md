@@ -6,17 +6,17 @@ Diperbarui 16 November 2026. Hasil audit ada di [ENVIRONMENT_AUDIT_2026-11-16.md
 
 Clone `https://github.com/OzoraRR/Alethia-Mobile.git`. Buka subfolder `android/` di Android Studio. Folder `backend/` adalah API Next.js dan skema Supabase; bukan UI web. Seluruh source Android sudah masuk `main` pada commit `e543ac9`.
 
-Prasyarat: Git, Docker untuk mode lokal, Node.js 24.x, pnpm 12.17.0, Android Studio, Android SDK Platform 37 / Build Tools 36.0.0, dan JDK 25 untuk konfigurasi Gradle proyek ini. Android Studio menghasilkan `android/local.properties` untuk lokasi SDK komputer masing-masing.
+Untuk frontend: Git, Android Studio, Android SDK Platform 37 / Build Tools 36.0.0, dan JDK 25 untuk konfigurasi Gradle proyek ini. Android Studio menghasilkan `android/local.properties` untuk lokasi SDK komputer masing-masing. Node.js 24.x, pnpm 12.17.0 dan Docker hanya diperlukan bila mengembangkan backend lokal.
 
 ## Pilihan A: frontend memakai staging hosted
 
 Mode ini tidak membutuhkan Docker, login Supabase CLI, Vercel CLI, atau server API lokal untuk menjalankan aplikasinya.
 
-1. Salin `android/alethia.properties.example` menjadi `android/alethia.properties`.
-2. Isi `ALETHIA_SUPABASE_URL=https://zbeaiphxmmwutzmqydlk.supabase.co`.
-3. Isi `ALETHIA_SUPABASE_PUBLISHABLE_KEY` dengan public/publishable key proyek **Alethia Mobile** yang diberikan pemilik proyek.
-4. Isi `ALETHIA_API_BASE_URL=https://alethia-mobile-backend.vercel.app`.
-5. Jalankan **Run app** di Android Studio. Emulator maupun ponsel menggunakan HTTPS untuk mode ini.
+1. Clone repo dan buka folder `android/` di Android Studio.
+2. Tunggu Gradle Sync, instal SDK yang diminta, lalu pilih emulator atau ponsel.
+3. Klik **Run app**. Tidak perlu mengisi file environment atau menyalin key.
+
+Gradle otomatis memakai `android/config/hosted.properties` yang berisi URL dan publishable key publik. Ini mengarah ke `https://alethia-mobile-backend.vercel.app`. Jika pengembang sudah memiliki `android/alethia.properties`, profil lokal itu tetap diprioritaskan. `-PalethiaConfig=...` memilih profil eksplisit dan gagal dengan pesan jelas bila file tidak ada. Environment variable masih memiliki prioritas tertinggi; gunakan ketiga nilai dari target yang sama.
 
 URL API di atas adalah domain tetap Vercel Production, dikonfigurasi dan diuji dengan akun sementara pada 16 November. Backend ini masih memakai Supabase Alethia Mobile yang sama dengan staging. Email confirmation masih dimatikan sesuai keputusan pengembangan; label Production Vercel tidak berarti seluruh produk sudah siap dirilis.
 
@@ -68,7 +68,7 @@ Dari `android/`: `./gradlew :core:test :app:lintDebug :app:assembleDebug`. Pengu
 
 Gunakan akun GitHub, Supabase, dan Vercel milik masing-masing pengembang. Pemilik proyek memberikan akses kolaborator sesuai pekerjaan yang perlu dilakukan. Akses clone repo publik tidak otomatis memberi izin push atau akses dashboard provider. Login CLI pemilik proyek di workstation ini tidak dibawa oleh clone GitHub.
 
-Berkas `.env*`, `alethia*.properties`, `local.properties`, token CLI dan signing key bersifat lokal serta diabaikan Git. Berikan konfigurasi yang dibutuhkan lewat kanal privat; publishable key boleh ada di aplikasi Android, server secret tidak boleh. CI dapat membangun tanpa kredensial hosted; tes integrasi Android hosted dilewati oleh guard hostname.
+Berkas `.env*`, profil `alethia*.properties` lokal, `local.properties`, token CLI dan signing key diabaikan Git. Pengecualiannya adalah `android/config/hosted.properties`, yang sengaja disertakan karena hanya berisi konfigurasi publik untuk aplikasi. Server secret tidak dimasukkan ke Android atau Git. CI dapat membangun tanpa kredensial hosted; tes integrasi Android hosted dilewati oleh guard hostname.
 
 ## Lingkup pekerjaan yang masih terbuka
 

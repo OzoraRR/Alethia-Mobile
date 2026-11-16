@@ -23,9 +23,11 @@ class MainActivity : ComponentActivity() {
         val model = ViewModelProvider(this, PracticeViewModel.Factory(LanguagePreferences(applicationContext), application.container.learnerRepository))[PracticeViewModel::class.java]
         val authModel = ViewModelProvider(this, AuthViewModel.Factory(application.container.authRepository))[AuthViewModel::class.java]
         val reportsModel = ViewModelProvider(this, ReportsViewModel.Factory(application.container.reportsRepository))[ReportsViewModel::class.java]
+        val learning = ViewModelProvider(this, LearningViewModel.Factory(application.container.learnerRepository,
+            LearningDraftStore(applicationContext)))[LearningViewModel::class.java]
         setContent {
             CompositionLocalProvider(LocalActivityResultRegistryOwner provides this) {
-                AlethiaTheme { AlethiaApp(model, authModel, reportsModel) }
+                AlethiaTheme { AlethiaApp(model, authModel, reportsModel, learning) }
             }
         }
     }

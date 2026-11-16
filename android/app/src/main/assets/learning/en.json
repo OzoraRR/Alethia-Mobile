@@ -1,0 +1,273 @@
+{
+  "socialEngineering": {
+    "label": "MODULE 02 · SOCIAL ENGINEERING",
+    "title": "Reconstructing a digital trail",
+    "description": "See how everyday details can be combined into a manipulation pretext, then decide how to reduce that exposure.",
+    "safeNote": "SAFE SIMULATION · People, organizations, and artifacts are fictional",
+    "begin": "Start reconstruction",
+    "checkpoints": [
+      "Choose vectors",
+      "Extraction",
+      "Pretext model",
+      "Mitigation"
+    ],
+    "briefing": {
+      "title": "Choose attack vectors",
+      "description": "A social engineer does not hack a system; they target people. Choose 2 to 5 kinds of information you might share online to see how an attacker could combine them into leverage."
+    },
+    "board": {
+      "title": "Choose 2–5 synthetic artifacts",
+      "description": "This board contains fictional examples only. It does not search real people, accounts, or sites.",
+      "continue": "Extract digital residue",
+      "count": "{count} of 5 selected",
+      "artifacts": [
+        {
+          "id": "visual",
+          "title": "Everyday Photo & Work Desk",
+          "value": "A coffee photo or desk setup",
+          "clue": "Visual Leak",
+          "exposure": "A screen may reveal internal apps; the background can expose CCTV placement or a physical ID badge.",
+          "mitigation": "Check the background before posting. Crop or blur screens, badges, and location clues; avoid live workplace posts."
+        },
+        {
+          "id": "routine",
+          "title": "Fitness Tracker & Routine",
+          "value": "Running route and gym schedule",
+          "clue": "Tracker Overshare",
+          "exposure": "Repeated routes and schedules can map routines, when a home is empty, or when someone is away from their phone.",
+          "mitigation": "Make routes private and delay uploads until the activity is over. Remove routines and precise locations from public profiles."
+        },
+        {
+          "id": "complaint",
+          "title": "Public Social-Media Complaint",
+          "value": "A delivery or service complaint",
+          "clue": "Angry Customer",
+          "exposure": "A post may expose an unredacted tracking number, customer ID, or phone number.",
+          "mitigation": "Redact tracking numbers, customer IDs, and contact details. Discuss transaction details through a support channel you opened yourself."
+        },
+        {
+          "id": "career",
+          "title": "Celebrating a Career Move",
+          "value": "News about a new job",
+          "clue": "Professional Euphoria",
+          "exposure": "New-employee status can attract fake HR/IT messages before someone knows the rules or support team.",
+          "mitigation": "Review who can see job updates. Verify HR/IT instructions through a known internal directory or channel before acting."
+        },
+        {
+          "id": "family",
+          "title": "Family Ecosystem Exposure",
+          "value": "Stories about a child, school, or pickup",
+          "clue": "Family Oversharing",
+          "exposure": "A child's name, school, or regular pickup relative can make a pretext feel familiar.",
+          "mitigation": "Limit public names and family schedules. Agree on a safeword and confirm emergencies using a known phone number."
+        }
+      ]
+    },
+    "extraction": {
+      "title": "Extracting Digital Residue...",
+      "description": "The findings below follow the artifacts and pairings you selected. No real data is searched for or sent.",
+      "continue": "View the threat model"
+    },
+    "pretext": {
+      "title": "Threat model · pretexting",
+      "description": "The examples below are static, neutralized simulations. Notice how two clues can make a story feel more believable.",
+      "safeLabel": "NEUTRALIZED SIMULATION EXAMPLES · do not follow any instructions",
+      "continue": "Review mitigations"
+    },
+    "mitigation": {
+      "title": "Quarantine data · mitigation",
+      "description": "Apply OPSEC steps that directly close exposure paths created by your selected combination.",
+      "choiceLabel": "Choose one action you will apply",
+      "finish": "Complete reconstruction",
+      "options": [
+        {
+          "id": "limit",
+          "label": "Minimize public details",
+          "description": "Reduce locations, routines, and transaction details that can be combined."
+        },
+        {
+          "id": "separate",
+          "label": "Separate identity contexts",
+          "description": "Avoid connecting personal, work, and family details in the same public trail."
+        },
+        {
+          "id": "verify",
+          "label": "Verify through an independent channel",
+          "description": "Contact the organization through a known official channel, not details in an incoming message."
+        }
+      ]
+    },
+    "summary": {
+      "title": "Selected trail",
+      "description": "Synthetic artifacts in this reconstruction:"
+    },
+    "pairings": {
+      "visual_routine": {
+        "title": "Desk photo + fitness routine",
+        "extraction": "An app visible on a screen can be paired with the time its owner is away from the desk and phone.",
+        "pretext": "Simulation: a message posing as IT support names an app visible in the photo and arrives when the exercise routine may distract its recipient.",
+        "mitigation": "Make exercise routes private or delayed and inspect the sender domain. Contact support through an internal directory you open yourself."
+      },
+      "visual_complaint": {
+        "title": "Desk photo + transaction complaint",
+        "extraction": "An unredacted tracking number can be combined with workplace, badge, or desk-location clues.",
+        "pretext": "Simulation: someone posing as a courier connects a parcel complaint to the workplace and asks for action through a work channel.",
+        "mitigation": "Redact tracking numbers and do not let workplace details become an alternate route for personal deliveries. Verify in the official courier app."
+      },
+      "visual_career": {
+        "title": "Desk photo + new-job announcement",
+        "extraction": "New-employee status combines with app, operating-system, or workplace identity clues visible in a photo.",
+        "pretext": "Simulation: a fake IT-support account offers a work tool and references details visible in the photo.",
+        "mitigation": "Do not install or open files based on a message. Confirm in person or through a known internal IT channel."
+      },
+      "visual_family": {
+        "title": "Desk photo + family post",
+        "extraction": "Workplace clues can be connected to a child's name or school location mentioned in a post.",
+        "pretext": "Simulation: a message posing as HR connects a workplace benefit to family information shared publicly.",
+        "mitigation": "Separate family and work trails. HR should not request family data through a link in an unexpected message."
+      },
+      "routine_complaint": {
+        "title": "Fitness routine + transaction complaint",
+        "extraction": "Times when a phone is rarely checked can be paired with a delivery problem the owner is waiting to resolve.",
+        "pretext": "Simulation: an urgent delivery notice appears during exercise, using divided attention and a visible complaint as context.",
+        "mitigation": "Delay route posts and open the courier app independently. Do not use links or deadlines supplied in an incoming message."
+      },
+      "routine_career": {
+        "title": "Fitness routine + new job",
+        "extraction": "Offline hours meet a new employee's pressure to appear responsive.",
+        "pretext": "Simulation: a message posing as a manager requests a file while the recipient is exercising and calls out their new status.",
+        "mitigation": "Disable public live tracking. Verify manager requests through a usual channel; time pressure is not proof of authority."
+      },
+      "routine_family": {
+        "title": "Fitness routine + family information",
+        "extraction": "An offline pattern can be combined with a child's name and a fictional pickup relative.",
+        "pretext": "Simulation: a fake emergency call contacts a relative and claims the account owner is unreachable while exercising.",
+        "mitigation": "Agree on a family safeword and out-of-band verification. Schools and relatives should not act on financial requests from callers."
+      },
+      "complaint_career": {
+        "title": "Transaction complaint + new job",
+        "extraction": "A public tracking number meets new-employee status and the desire to appear professional.",
+        "pretext": "Simulation: a supposed delivery service adds a request for workplace data under the pretext of priority service.",
+        "mitigation": "A delivery service does not need employment data to resolve a parcel. Redact tracking details and verify in the official app."
+      },
+      "complaint_family": {
+        "title": "Transaction complaint + family information",
+        "extraction": "An open parcel issue can be linked to a child's name, school, or named pickup relative.",
+        "pretext": "Simulation: a fake courier message mentions a relative or school to request a code or a handoff change.",
+        "mitigation": "Never give an OTP or verification code to a courier or caller. Confirm delivery in the official app and contact family through a saved number."
+      },
+      "career_family": {
+        "title": "New job + family information",
+        "extraction": "A new-employee announcement can combine with child or school context to make a benefits story feel personal.",
+        "pretext": "Simulation: a message posing as HR ties family-benefit registration to an urgent deadline.",
+        "mitigation": "Zero Trust applies to internal messages too. Ask HR through a saved company channel; do not send family documents through message links."
+      }
+    },
+    "complete": {
+      "title": "Reconstruction complete",
+      "description": "You selected artifacts, saw how clues can be combined, and reviewed relevant mitigations.",
+      "unlock": "Module 3 becomes available after this completion is recorded. This module has no score.",
+      "modules": "modules complete",
+      "sync": "Completion is saved on this device only; account sync failed. The next module still requires server confirmation.",
+      "back": "Back to the module list"
+    }
+  },
+  "executableFile": {
+    "label": "MODULE 03 · DOCUMENT ANALYSIS",
+    "title": "Risky Document Analysis",
+    "description": "This message offers an urgent delivery document. Inspect the source, filename, and extension before acting.",
+    "safeNote": "SAFE SIMULATION · No real file is available or executed",
+    "begin": "Open sample message",
+    "recipient": "RECIPIENT · MESSAGE",
+    "checkpoints": [
+      "Message",
+      "Inspect",
+      "Verify",
+      "Respond",
+      "Analysis"
+    ],
+    "scenario": {
+      "sender": "billing-notify@delivery-docs[.]example",
+      "timestamp": "Today · 11:08",
+      "message": "A delivery invoice needs review before 12:00. Download the document to update its status.",
+      "fileName": "Delivery_Invoice_2026.pdf.exe",
+      "extension": ".exe",
+      "link": "delivery-archive[.]example/Delivery_Invoice_2026.pdf.exe"
+    },
+    "inspect": {
+      "title": "Open the file details one by one",
+      "description": "The complete filename and the real extension decide what would run. Every detail here is fictional and cannot be downloaded.",
+      "source": "Source",
+      "file": "Complete filename",
+      "extension": "Actual extension",
+      "link": "Simulated route",
+      "note": "An .exe extension is not automatically malicious, but an unexpected file from an untrusted source should be stopped and verified.",
+      "continue": "Continue to verification",
+      "prompt": "Open at least two details before you continue.",
+      "requirement": "Open at least two file details.",
+      "clickInstruction": "Click a detail label to reveal its check result. Open at least two details before continuing.",
+      "opened": "Details opened: {count} of {total}."
+    },
+    "decide": {
+      "title": "Choose a response",
+      "options": {
+        "open": {
+          "label": "Open or download the file",
+          "description": "Continue the simulated file route."
+        },
+        "verify": {
+          "label": "Verify through an official channel",
+          "description": "Check the order or sender through a channel you already know."
+        },
+        "ignore": {
+          "label": "Delete or ignore",
+          "description": "Stop interacting with the message and file."
+        },
+        "report": {
+          "label": "Report the message",
+          "description": "Mark the message through a trusted reporting path."
+        }
+      }
+    },
+    "analysis": {
+      "label": "FILE ANALYSIS · SIMULATION",
+      "status": "STATUS",
+      "impact": "IMPACT",
+      "pending": "AWAITING RESPONSE",
+      "risky": "SIMULATED RISKY ROUTE",
+      "interrupted": "FILE ROUTE INTERRUPTED",
+      "unsafe": "Opening or downloading an unexpected file advances a risky route. No real file is created, downloaded, or run.",
+      "safe": "An official channel or ending interaction interrupts the file route before a device action occurs.",
+      "why": "Why it matters",
+      "whyValue": "A filename can hide its actual extension; the source and context still need inspection.",
+      "safer": "Safer action",
+      "saferValue": "Do not open an unexpected file. Verify the claim through a trusted channel, then report it if appropriate.",
+      "finish": "Finish practice",
+      "verifiedLabel": "VERIFICATION",
+      "verifiedYes": "Done before deciding",
+      "verifiedNo": "Not done"
+    },
+    "complete": {
+      "title": "Practice complete",
+      "description": "You checked the source, context, and extension before choosing a response.",
+      "modules": "modules complete",
+      "scoreLabel": "Decision score",
+      "perfect": "Perfect score — next module unlocked.",
+      "notPerfect": "Not yet perfect — replay this module to unlock the next one.",
+      "sync": "Saved on this device only; this result was not synchronized to your account.",
+      "back": "Back to the module list"
+    },
+    "verify": {
+      "title": "Verify through an official channel",
+      "description": "A delivery claim can be checked without opening the file: look up the order in a channel you already trust, never through the link in the message.",
+      "action": "Open the official channel",
+      "appTitle": "Courier · official app",
+      "appNote": "Simulation · the channel you opened yourself",
+      "prompt": "Look up the order in the official channel",
+      "resultLabel": "Check result",
+      "resultTitle": "No such document in your account",
+      "resultBody": "The official channel has no invoice (.pdf.exe) and the sender is not the courier's domain. The claim did not come from the courier.",
+      "confirm": "Checked, continue"
+    }
+  }
+}

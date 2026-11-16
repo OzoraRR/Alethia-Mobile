@@ -7,7 +7,7 @@
 - `../backend` owns privileged HTTP handlers and the Supabase migration/test chain. It contains no learner-facing web UI.
 - Native Compose login and sign-up screens use `AuthViewModel` and `AuthRepository`. Email registration/sign-in call Supabase Auth through the Kotlin SDK; username sign-in uses the backend endpoint and imports its verified tokens into the SDK. The SDK session is encrypted with an Android Keystore key. An authenticated session routes welcome/login/register to the dashboard. The hosted Supabase project and Vercel API are configured. Signed-in dashboard and learning data use the caller JWT through `LearnerRepository`; `PracticeViewModel` coordinates account data and practice submission. Guest dashboard preview data is kept separate.
 
-The current integration covers the existing Courier practice and account features; the two remaining training simulations are not implemented. `PracticeViewModel` owns navigation and practice state; keep adding feature-specific ViewModels and repositories as each connected feature is implemented instead of creating empty layers now.
+The integration covers all three native practices and account features. `LearningViewModel` owns lesson interactions, durable recovery and verified submission through `LearnerRepository`; see [MODULES.md](MODULES.md). `PracticeViewModel` owns navigation and practice state; keep adding feature-specific ViewModels and repositories as each connected feature is implemented instead of creating empty layers now.
 
 ## Feature change boundary
 

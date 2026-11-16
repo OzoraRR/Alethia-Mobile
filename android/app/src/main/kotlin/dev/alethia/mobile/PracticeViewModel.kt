@@ -93,7 +93,13 @@ class PracticeViewModel(
         mutableDashboardUiState.value = snapshot.dashboard
         mutableBackend.value = mutableBackend.value.copy(snapshot = snapshot)
     }
-    fun refreshBackend() { operation { refreshSnapshot() } }
+    fun refreshBackend() {
+        val expected = owner
+        viewModelScope.launch {
+            operationJob?.join()
+            if (owner == expected && expected != null) operation { refreshSnapshot() }
+        }
+    }
     fun signOut() { operation { repository!!.signOut() } }
     fun submitReport(title: String, evidence: String, risk: String) {
         operation {

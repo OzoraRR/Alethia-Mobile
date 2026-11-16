@@ -41,6 +41,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
@@ -85,6 +86,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.alethia.core.ModuleId
 import dev.alethia.core.CourierStage
 import dev.alethia.core.CourierState
 import kotlinx.coroutines.launch
@@ -119,6 +121,31 @@ fun Screen.roadmapCategoryOrNull(): ModuleCategory? = when (this) {
     else -> null
 }
 
+fun ModuleCategory.moduleId(): ModuleId = when (this) {
+    ModuleCategory.Phishing -> ModuleId.CourierSms
+    ModuleCategory.SocialEngineering -> ModuleId.SocialEngineering
+    ModuleCategory.MaliciousDocument -> ModuleId.ExecutableFile
+}
+private fun ModuleCategory.lessonTitle(): Int = when (this) {
+    ModuleCategory.Phishing -> R.string.learn_title_sms
+    ModuleCategory.SocialEngineering -> R.string.learn_title_social
+    ModuleCategory.MaliciousDocument -> R.string.learn_title_file
+}
+private fun ModuleCategory.lessonDescription(): Int = when (this) {
+    ModuleCategory.Phishing -> R.string.courier_description
+    ModuleCategory.SocialEngineering -> R.string.social_description
+    ModuleCategory.MaliciousDocument -> R.string.document_description
+}
+private fun moduleAccess(category: ModuleCategory, signedIn: Boolean, server: Map<String, String>?, sessions: Map<ModuleId, LearningSession>): String {
+    if (signedIn) return server?.get(category.moduleId().wireId) ?: "checking"
+    fun completed(id: ModuleId) = sessions[id]?.let { it.state.stage == 6 && (id == ModuleId.SocialEngineering || it.result?.perfect == true) } == true
+    val module = category.moduleId()
+    if (module != ModuleId.CourierSms && !completed(ModuleId.CourierSms)) return "locked"
+    if (module == ModuleId.ExecutableFile && !completed(ModuleId.SocialEngineering)) return "locked"
+    if (completed(module)) return "completed"
+    return if (sessions[module]?.state?.stage in 1..5) "in_progress" else "available"
+}
+
 private data class ModuleVisual(
     val title: Int,
     val description: Int,
@@ -142,16 +169,16 @@ private fun ModuleCategory.visual(): ModuleVisual = when (this) {
         R.string.social_description,
         R.drawable.module_island_social_engineering,
         R.drawable.module_roadmap_social_engineering,
-        Color(0xFF87939B),
-        hasTraining = false,
+        Color(0xFFEB78CE),
+        hasTraining = true,
     )
     ModuleCategory.MaliciousDocument -> ModuleVisual(
         R.string.document_title,
         R.string.document_description,
         R.drawable.module_island_malicious_document,
         R.drawable.module_roadmap_malicious_document,
-        Color(0xFF87939B),
-        hasTraining = false,
+        Color(0xFF8DB8E8),
+        hasTraining = true,
     )
 }
 
@@ -160,19 +187,15 @@ fun ModuleSelectionScreen(
     selectedCategory: ModuleCategory,
     courier: CourierState,
     serverAccess: Map<String, String>? = null,
+    sessions: Map<ModuleId, LearningSession> = emptyMap(),
     signedIn: Boolean = false,
     onSelectCategory: (ModuleCategory) -> Unit,
     onOpenRoadmap: () -> Unit,
 ) {
     val visual = selectedCategory.visual()
-    val isCompleted = selectedCategory == ModuleCategory.Phishing && (if (signedIn) serverAccess?.get("courier-sms") == "completed" else courier.stage == CourierStage.Complete)
-    val isInProgress = selectedCategory == ModuleCategory.Phishing &&
-        courier.stage != CourierStage.Briefing && courier.stage != CourierStage.Complete
-    val lessonProgress = when {
-        isCompleted -> 1f
-        isInProgress -> (courier.stage.ordinal / 5f).coerceIn(0f, 1f)
-        else -> 0f
-    }
+    val access = moduleAccess(selectedCategory, signedIn, serverAccess, sessions)
+    val isCompleted = access == "completed"
+    val lessonProgress = if (isCompleted) 1f else (sessions[selectedCategory.moduleId()]?.state?.stage ?: 0) / 6f
     val categories = ModuleCategory.entries
     val pager = rememberPagerState(initialPage = 15000 + selectedCategory.ordinal, pageCount = { 30000 })
     val scope = rememberCoroutineScope()
@@ -211,7 +234,7 @@ fun ModuleSelectionScreen(
         ) {
             PixelTag(text = stringResource(R.string.module_category_index, selectedCategory.ordinal + 1, ModuleCategory.entries.size), accent = visual.accent)
             Text(
-                stringResource(if (visual.hasTraining) R.string.module_status_active else R.string.module_locked),
+                stringResource(when (access) { "locked" -> R.string.module_locked; "checking" -> R.string.learn_checking; "completed" -> R.string.checkpoint_status_complete; else -> R.string.module_status_active }),
                 color = visual.accent,
                 fontFamily = FontFamily.Monospace,
                 fontWeight = FontWeight.Bold,
@@ -238,6 +261,7 @@ fun ModuleSelectionScreen(
                 val animatedCategory = categories[page % categories.size]
                 val distance = kotlin.math.abs((pager.currentPage - page) + pager.currentPageOffsetFraction).coerceIn(0f, 1f)
                 val item = animatedCategory.visual()
+                val locked = moduleAccess(animatedCategory, signedIn, serverAccess, sessions) in setOf("locked", "checking")
                 Box(Modifier.fillMaxSize().padding(4.dp).graphicsLayer {
                     scaleX = 1f - distance * 0.09f
                     scaleY = 1f - distance * 0.09f
@@ -247,11 +271,11 @@ fun ModuleSelectionScreen(
                         stillResource = item.islandStill,
                         description = stringResource(item.title),
                         allowAnimation = true,
-                        locked = !item.hasTraining,
+                        locked = locked,
                         accent = item.accent,
                         modifier = Modifier.fillMaxSize(),
                     )
-                    if (!item.hasTraining) PixelLockBadge(accent = item.accent, modifier = Modifier.size(54.dp))
+                    if (locked) PixelLockBadge(accent = item.accent, modifier = Modifier.size(54.dp))
                 }
             }
 
@@ -284,7 +308,7 @@ fun ModuleSelectionScreen(
             Text(stringResource(visual.description), color = Muted, style = MaterialTheme.typography.bodyMedium)
         }
 
-        if (visual.hasTraining) {
+        if (access !in setOf("locked", "checking")) {
             ModuleProgressPanel(
                 accent = visual.accent,
                 progress = lessonProgress,
@@ -307,6 +331,7 @@ fun ModuleRoadmapScreen(
     category: ModuleCategory,
     courier: CourierState,
     serverAccess: Map<String, String>? = null,
+    sessions: Map<ModuleId, LearningSession> = emptyMap(),
     signedIn: Boolean = false,
     scrollState: androidx.compose.foundation.ScrollState,
     onBack: () -> Unit,
@@ -315,22 +340,25 @@ fun ModuleRoadmapScreen(
 ) {
     val visual = category.visual()
     var checkpointOpen by remember(category) { mutableStateOf(false) }
-    val completed = category == ModuleCategory.Phishing && (if (signedIn) serverAccess?.get("courier-sms") == "completed" else courier.stage == CourierStage.Complete)
-    val inProgress = category == ModuleCategory.Phishing &&
-        courier.stage != CourierStage.Briefing && courier.stage != CourierStage.Complete
+    val access = moduleAccess(category, signedIn, serverAccess, sessions)
+    val locked = access in setOf("locked", "checking")
+    val completed = access == "completed"
+    val inProgress = access == "in_progress"
+    val progress = if (completed) 1f else (sessions[category.moduleId()]?.state?.stage ?: 0) / 6f
     val statusLabel = when {
+        access == "checking" -> R.string.learn_checking
+        locked -> R.string.module_locked
         completed -> R.string.checkpoint_status_complete
         inProgress -> R.string.checkpoint_status_in_progress
-        visual.hasTraining -> R.string.checkpoint_status_available
-        else -> R.string.module_locked
+        else -> R.string.checkpoint_status_available
     }
     val statusDescription = stringResource(statusLabel)
     val checkpointNumber = stringResource(R.string.checkpoint_number, 1)
-    val checkpointTitle = stringResource(R.string.courier_title)
-    val checkpointDescription = stringResource(R.string.courier_description)
+    val checkpointTitle = stringResource(category.lessonTitle())
+    val checkpointDescription = stringResource(category.lessonDescription())
     val checkpointAction = stringResource(
         when {
-            completed -> R.string.checkpoint_repeat
+            completed -> R.string.learn_review
             inProgress -> R.string.checkpoint_continue
             else -> R.string.checkpoint_start
         },
@@ -352,10 +380,10 @@ fun ModuleRoadmapScreen(
             }
         }
 
-        if (visual.hasTraining) {
+        if (!locked) {
             ModuleProgressPanel(
                 accent = visual.accent,
-                progress = if (completed) 1f else if (inProgress) (courier.stage.ordinal / 5f).coerceIn(0f, 1f) else 0f,
+                progress = progress,
                 completedCount = if (completed) 1 else 0,
                 totalCount = 1,
             )
@@ -370,9 +398,9 @@ fun ModuleRoadmapScreen(
                         stillResource = visual.roadmapStill,
                         description = stringResource(visual.title),
                         allowAnimation = !checkpointOpen,
-                        locked = !visual.hasTraining,
+                        locked = locked,
                         cropTopFraction = 0.38f,
-                        activeRoadmapFromFraction = if (category == ModuleCategory.Phishing) 0.66f else null,
+                        activeRoadmapFromFraction = if (!locked) 0.66f else null,
                         accent = visual.accent,
                         modifier = Modifier.fillMaxSize(),
                     )
@@ -388,10 +416,10 @@ fun ModuleRoadmapScreen(
                             size = size,
                         )
                     }
-                    if (!visual.hasTraining) {
+                    if (locked) {
                         PixelLockBadge(accent = visual.accent, modifier = Modifier.align(Alignment.Center).size(58.dp))
                     }
-                    if (category == ModuleCategory.Phishing) {
+                    if (!locked) {
                         CheckpointMarker(
                             stateLabel = statusDescription,
                             completed = completed,
@@ -408,7 +436,8 @@ fun ModuleRoadmapScreen(
             }
         }
 
-        if (visual.hasTraining) {
+        if (locked) Text(stringResource(if (access == "checking") R.string.learn_checking else R.string.learn_locked), color = Muted)
+        if (!locked) {
             ModuleFrame(accent = visual.accent, modifier = Modifier.fillMaxWidth()) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -419,9 +448,9 @@ fun ModuleRoadmapScreen(
                     PixelTag(text = statusDescription.uppercase(), accent = visual.accent)
                 }
                 Spacer(Modifier.height(5.dp))
-                Text(stringResource(R.string.courier_title), color = Ice, fontWeight = FontWeight.Bold,
+                Text(checkpointTitle, color = Ice, fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.titleMedium)
-                Text(stringResource(R.string.courier_description), color = Muted, style = MaterialTheme.typography.bodySmall)
+                Text(checkpointDescription, color = Muted, style = MaterialTheme.typography.bodySmall)
                 OutlinedButton(
                     onClick = { checkpointOpen = true },
                     modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("open_checkpoint"),
@@ -431,7 +460,7 @@ fun ModuleRoadmapScreen(
         }
     }
 
-    if (checkpointOpen && category == ModuleCategory.Phishing) {
+    if (checkpointOpen && !locked) {
         CheckpointDialog(
             numberLabel = checkpointNumber,
             statusLabel = statusDescription,
@@ -440,7 +469,7 @@ fun ModuleRoadmapScreen(
             actionLabel = checkpointAction,
             closeLabel = checkpointClose,
             inProgress = inProgress,
-            progress = if (completed) 1f else if (inProgress) (courier.stage.ordinal / 5f).coerceIn(0f, 1f) else 0f,
+            progress = progress,
             accent = visual.accent,
             onDismiss = { checkpointOpen = false },
             onStart = { onSaveScroll(scrollState.value); onStartPractice() },
@@ -607,6 +636,7 @@ private fun PixelLockBadge(accent: Color, modifier: Modifier = Modifier) {
     }
 }
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 private fun CheckpointDialog(
     numberLabel: String,
@@ -621,39 +651,22 @@ private fun CheckpointDialog(
     onDismiss: () -> Unit,
     onStart: () -> Unit,
 ) {
-    Dialog(
+    androidx.compose.material3.ModalBottomSheet(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false),
+        containerColor = Color(0xFF0C151D),
     ) {
-        ModuleFrame(
-            accent = accent,
-            modifier = Modifier.fillMaxWidth().widthIn(max = 390.dp).padding(horizontal = 22.dp),
-            innerPadding = 22.dp,
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()) {
-                PixelTag(text = numberLabel, accent = accent)
-                PixelTag(text = statusLabel.uppercase(), accent = accent)
+        Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                PixelTag(numberLabel, accent)
+                PixelTag(statusLabel.uppercase(), accent)
             }
-            Text(title, color = Ice, fontWeight = FontWeight.Bold,
-                style = MaterialTheme.typography.headlineSmall)
+            Text(title, color = Ice, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             Text(description, color = Muted, style = MaterialTheme.typography.bodyMedium)
-            if (inProgress) {
-                LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth(), color = accent,
-                    trackColor = Color(0xFF1C2932))
-            }
-            Button(
-                onClick = onStart,
-                modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).testTag("start_checkpoint"),
-                shape = SteppedFrameShape,
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF83AE39), contentColor = Navy950),
-            ) {
-                Text(actionLabel, fontFamily = FontFamily(Font(R.font.quest_pixel)), fontSize = 10.sp)
-            }
-            OutlinedButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                border = BorderStroke(1.dp, accent.copy(alpha = 0.65f)), shape = SteppedFrameShape) {
-                Text(closeLabel, color = Muted)
-            }
+            if (inProgress) LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth(), color = accent)
+            PixelPrimaryButton(actionLabel, accent, onStart, Modifier.testTag("start_checkpoint"))
+            TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(closeLabel, color = Muted) }
+            Spacer(Modifier.height(16.dp))
         }
     }
 }

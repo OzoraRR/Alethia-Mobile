@@ -61,7 +61,7 @@ jobs:
         uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6
 
       - name: Run JVM tests, Android lint and debug build
-        run: ./gradlew --no-daemon :core:test :app:lintDebug :app:assembleDebug
+        run: ./gradlew --no-daemon :core:test :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
 
       - name: Upload debug APK
         if: success()

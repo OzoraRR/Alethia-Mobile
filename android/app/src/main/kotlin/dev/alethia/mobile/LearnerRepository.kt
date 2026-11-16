@@ -8,12 +8,14 @@ import java.net.URL
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
+import dev.alethia.core.ModuleId
 
 /** Caller JWT is the authority. No server credentials or client-authored scores. */
 class LearnerRepository(
@@ -21,7 +23,10 @@ class LearnerRepository(
     private val url: String,
     private val publicKey: String,
 ) {
-    val identity = client.auth.sessionStatus.map {
+    val identity = client.auth.sessionStatus.filter {
+        // SDK lifecycle refresh is not a sign-out; retain the owner and recovery state while it runs.
+        it !is SessionStatus.Initializing && it !is SessionStatus.RefreshFailure
+    }.map {
         if (it is SessionStatus.Authenticated) {
             it.session.user?.id ?: client.auth.retrieveUserForCurrentSession(updateSession = true).id
         } else null
@@ -66,7 +71,8 @@ class LearnerRepository(
                     code to raw
                 } finally { connection.disconnect() }
             }
-            check(client.auth.currentUserOrNull()?.id == owner) { "Account changed" }
+            client.auth.awaitInitialization()
+            check(client.auth.currentUserOrNull()?.id == owner) { "Account changed during ${path.substringBefore('?')} (HTTP ${response.first}; sessionPresent=${client.auth.currentUserOrNull() != null})" }
             if (response.first == 401 && attempt == 0) {
                 client.auth.refreshCurrentSession()
                 check(client.auth.currentUserOrNull()?.id == owner) { "Account changed" }
@@ -100,14 +106,29 @@ class LearnerRepository(
         return parseLearnerSnapshot(state, reports, notifications, counts)
     }
 
-    suspend fun beginAttempt(): String = org.json.JSONTokener(
-        rpc("begin_verified_practice_attempt", JSONObject().put("requested_module_id", "courier-sms")),
+    suspend fun beginAttempt(module: ModuleId = ModuleId.CourierSms): String = org.json.JSONTokener(
+        rpc("begin_verified_practice_attempt", JSONObject().put("requested_module_id", module.wireId)),
     ).nextValue() as String
 
-    suspend fun completeAttempt(id: String, decisions: List<String>): Int = JSONArray(rpc(
-        "complete_verified_practice_attempt",
-        JSONObject().put("requested_attempt_id", id).put("requested_decisions", JSONArray(decisions)),
-    )).getJSONObject(0).getInt("score")
+    suspend fun completeAttempt(id: String, decisions: List<String>): Int = completeLearningAttempt(id, decisions).score
+        ?: error("Unscored module has no numeric score")
+
+    suspend fun completeLearningAttempt(id: String, decisions: List<String>): LearningResult {
+        val result = JSONArray(rpc("complete_verified_practice_attempt",
+            JSONObject().put("requested_attempt_id", id).put("requested_decisions", JSONArray(decisions)))).getJSONObject(0)
+        return LearningResult(if (result.isNull("score")) null else result.getInt("score"),
+            if (result.isNull("perfect")) null else result.getBoolean("perfect"))
+    }
+    suspend fun learningSessions(): List<LearningSession> = JSONArray(rpc("get_learning_sessions")).objects().map(::decodeSession)
+    suspend fun openLearning(module: ModuleId, restart: Boolean): LearningSession = decodeSession(JSONObject(rpc("open_learning_session",
+        JSONObject().put("requested_module_id", module.wireId).put("requested_restart", restart))))
+    suspend fun saveLearning(session: LearningSession): LearningSession {
+        val payload = encodeLearningState(session.state).put("result", session.result?.let {
+            JSONObject().put("score", it.score ?: JSONObject.NULL).put("perfect", it.perfect ?: JSONObject.NULL)
+        })
+        return decodeSession(JSONObject(rpc("save_learning_session", JSONObject()
+            .put("requested_attempt_id", session.attemptId).put("requested_revision", session.revision).put("requested_state", payload))))
+    }
 
     suspend fun claim(quest: DashboardQuestState) {
         rpc("claim_daily_quest", JSONObject().put("requested_quest_id", quest.id).put("requested_quest_date", quest.questDate))
@@ -138,6 +159,7 @@ data class LearnerSnapshot(
     val reports: List<LearnerRow>,
     val notifications: List<LearnerRow>,
     val locale: String,
+    val moduleScores: Map<String, Int?> = emptyMap(),
 )
 
 internal fun parseLearnerSnapshot(state: JSONObject, reports: JSONArray, notifications: JSONArray, counts: JSONArray): LearnerSnapshot {
@@ -170,6 +192,7 @@ internal fun parseLearnerSnapshot(state: JSONObject, reports: JSONArray, notific
         reports = reports.objects().map { LearnerRow(it.getString("id"), it.getString("title"), it.getString("review_status")) },
         notifications = notifications.objects().map { LearnerRow(it.getString("id"), it.getString("title"), it.getString("body"), it.getBoolean("is_read")) },
         locale = profile.getString("preferredLocale"),
+        moduleScores = state.getJSONArray("modules").objects().associate { it.getString("module_id") to if (it.isNull("score")) null else it.getInt("score") },
     )
 }
 private fun JSONArray.objects() = (0 until length()).map { getJSONObject(it) }

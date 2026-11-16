@@ -12,10 +12,12 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,9 +25,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
@@ -47,6 +48,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -54,7 +56,10 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -76,7 +81,7 @@ fun ReportsListScreen(
 ) {
     Column(
         modifier = Modifier.fillMaxWidth().testTag("reports_screen"),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Text(
             text = stringResource(R.string.reports_eyebrow),
@@ -97,6 +102,7 @@ fun ReportsListScreen(
             style = MaterialTheme.typography.bodyMedium,
         )
         RolePill(state.role)
+        Box(Modifier.fillMaxWidth().height(2.dp).background(Signal.copy(alpha = 0.35f)))
 
         if (!state.signedIn) {
             ReportSection(stringResource(R.string.reports_title)) {
@@ -111,7 +117,7 @@ fun ReportsListScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Button(
+                ReportPrimaryButton(
                     onClick = onNewReport,
                     modifier = Modifier.weight(1f)
                         .heightIn(min = 48.dp)
@@ -119,7 +125,7 @@ fun ReportsListScreen(
                 ) {
                     Text(stringResource(R.string.reports_add))
                 }
-                TextButton(onClick = onRefresh, enabled = !state.loading) {
+                ReportTextButton(onClick = onRefresh, enabled = !state.loading) {
                     Text(
                         text = stringResource(R.string.reports_refresh),
                         style = MaterialTheme.typography.labelMedium,
@@ -131,7 +137,7 @@ fun ReportsListScreen(
             Surface(
                 color = Navy900,
                 border = BorderStroke(1.dp, Navy700),
-                shape = RoundedCornerShape(12.dp),
+                shape = SteppedFrameShape,
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Column(
@@ -193,21 +199,38 @@ fun ReportsListScreen(
                 Surface(
                     color = Navy900,
                     border = BorderStroke(1.dp, Navy700),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = SteppedFrameShape,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text(
-                        text = stringResource(
-                            if (state.scope == ReportScope.Mine) {
-                                R.string.reports_empty_mine
-                            } else {
-                                R.string.reports_empty_all
-                            },
-                        ),
-                        color = Muted,
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(18.dp),
-                    )
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                    ) {
+                        Surface(
+                            color = Signal.copy(alpha = 0.08f),
+                            shape = SteppedFrameShape,
+                            border = BorderStroke(1.dp, Signal.copy(alpha = 0.35f)),
+                        ) {
+                            Text("[ / ]", color = Signal, fontFamily = FontFamily.Monospace,
+                                fontSize = 26.sp, modifier = Modifier.padding(18.dp))
+                        }
+                        Text(
+                            text = stringResource(
+                                if (state.scope == ReportScope.Mine) R.string.reports_empty_mine
+                                else R.string.reports_empty_all,
+                            ),
+                            color = Ice,
+                            style = MaterialTheme.typography.titleMedium,
+                            textAlign = TextAlign.Center,
+                        )
+                        Text(
+                            stringResource(R.string.reports_description),
+                            color = Muted,
+                            style = MaterialTheme.typography.bodySmall,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
                 }
             }
 
@@ -216,7 +239,7 @@ fun ReportsListScreen(
             }
 
             if (state.hasMore) {
-                OutlinedButton(
+                ReportOutlineButton(
                     onClick = onLoadMore,
                     enabled = !state.loadingMore,
                     modifier = Modifier.fillMaxWidth().testTag("reports_load_more"),
@@ -235,7 +258,7 @@ fun ReportsListScreen(
             Surface(
                 color = Warning.copy(alpha = 0.06f),
                 border = BorderStroke(1.dp, Warning.copy(alpha = 0.24f)),
-                shape = RoundedCornerShape(10.dp),
+                shape = SteppedFrameShape,
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(
@@ -268,7 +291,7 @@ fun ReportDetailScreen(
     }
     if (report == null) {
         ReportErrorText(state.error ?: ReportError.NotFound)
-        OutlinedButton(
+        ReportOutlineButton(
             onClick = onRetry,
             modifier = Modifier.fillMaxWidth(),
         ) {
@@ -279,7 +302,7 @@ fun ReportDetailScreen(
 
     Column(
         modifier = Modifier.fillMaxWidth().testTag("report_detail_screen"),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         if (state.busy) LinearProgressIndicator(Modifier.fillMaxWidth())
 
@@ -368,7 +391,7 @@ fun ReportDetailScreen(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        OutlinedButton(
+        ReportOutlineButton(
             onClick = onToggleSignal,
             enabled = state.role == ReportRole.Investigator && !state.busy,
             modifier = Modifier.testTag("report_signal"),
@@ -419,7 +442,7 @@ private fun OwnerActions(
     Surface(
         color = Signal.copy(alpha = 0.06f),
         border = BorderStroke(1.dp, Signal.copy(alpha = 0.32f)),
-        shape = RoundedCornerShape(10.dp),
+        shape = SteppedFrameShape,
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(
@@ -435,14 +458,14 @@ private fun OwnerActions(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Button(
+                ReportPrimaryButton(
                     onClick = onEdit,
                     enabled = !busy,
                     modifier = Modifier.weight(1f).testTag("report_edit"),
                 ) {
                     Text(stringResource(R.string.reports_detail_edit))
                 }
-                OutlinedButton(
+                ReportOutlineButton(
                     onClick = { confirmDelete = true },
                     enabled = !busy,
                     modifier = Modifier.weight(1f).testTag("report_delete"),
@@ -475,7 +498,7 @@ private fun OwnerActions(
                 )
             },
             confirmButton = {
-                TextButton(
+                ReportTextButton(
                     onClick = {
                         confirmDelete = false
                         onDelete()
@@ -488,7 +511,7 @@ private fun OwnerActions(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { confirmDelete = false }) {
+                ReportTextButton(onClick = { confirmDelete = false }) {
                     Text(stringResource(R.string.reports_cancel))
                 }
             },
@@ -522,7 +545,7 @@ private fun VerdictSection(
             val valid = verdict.verdict == "valid"
             Surface(
                 color = Navy950,
-                shape = RoundedCornerShape(6.dp),
+                shape = SteppedFrameShape,
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Column(
@@ -579,6 +602,7 @@ private fun VerdictSection(
                 )
             }
             OutlinedTextField(
+        shape = SteppedFrameShape,
                 value = reason,
                 onValueChange = {
                     reason = it.take(2000)
@@ -594,14 +618,14 @@ private fun VerdictSection(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Button(
+                ReportPrimaryButton(
                     onClick = { onCastVerdict("valid", reason) { reason = "" } },
                     enabled = reason.trim().length >= 4 && !state.busy,
                     modifier = Modifier.weight(1f).testTag("report_verdict_valid"),
                 ) {
                     Text(stringResource(R.string.reports_verdict_valid))
                 }
-                OutlinedButton(
+                ReportOutlineButton(
                     onClick = { onCastVerdict("invalid", reason) { reason = "" } },
                     enabled = reason.trim().length >= 4 && !state.busy,
                     modifier = Modifier.weight(1f).testTag("report_verdict_invalid"),
@@ -635,7 +659,7 @@ private fun NoteSection(
             val investigator = note.authorRole == ReportRole.Investigator
             Surface(
                 color = Navy950,
-                shape = RoundedCornerShape(6.dp),
+                shape = SteppedFrameShape,
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Column(
@@ -677,6 +701,7 @@ private fun NoteSection(
         }
         if (state.role == ReportRole.Investigator) {
             OutlinedTextField(
+        shape = SteppedFrameShape,
                 value = draft,
                 onValueChange = {
                     draft = it.take(3000)
@@ -690,7 +715,7 @@ private fun NoteSection(
                 enabled = !state.busy,
                 modifier = Modifier.fillMaxWidth().testTag("report_note_input"),
             )
-            Button(
+            ReportPrimaryButton(
                 onClick = { onAddNote(draft) { draft = "" } },
                 enabled = draft.trim().length >= 4 && !state.busy,
                 modifier = Modifier.fillMaxWidth().testTag("report_note_submit"),
@@ -719,7 +744,7 @@ fun ReportEditorScreen(
 ) {
     Column(
         modifier = Modifier.fillMaxWidth().testTag("report_editor_screen"),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         val context = LocalContext.current
         val scope = rememberCoroutineScope()
@@ -754,19 +779,20 @@ fun ReportEditorScreen(
             },
         ),
         color = Ice,
-        style = MaterialTheme.typography.headlineMedium,
+        style = MaterialTheme.typography.headlineSmall,
         fontWeight = FontWeight.Bold,
     )
     Text(stringResource(R.string.reports_editor_description), color = Muted)
     if (state.saving) LinearProgressIndicator(Modifier.fillMaxWidth())
 
     OutlinedTextField(
+        shape = SteppedFrameShape,
         value = state.title,
         onValueChange = onTitle,
         label = { Text(stringResource(R.string.reports_editor_title)) },
         singleLine = true,
         enabled = !state.saving,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().testTag("report_title_input"),
     )
     ReportChoiceRow(
         label = stringResource(R.string.reports_editor_category),
@@ -790,24 +816,27 @@ fun ReportEditorScreen(
         onSelect = onPattern,
     )
     OutlinedTextField(
+        shape = SteppedFrameShape,
         value = state.evidence,
         onValueChange = onEvidence,
         label = { Text(stringResource(R.string.reports_editor_evidence)) },
         minLines = 4,
         maxLines = 10,
         enabled = !state.saving,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().testTag("report_evidence_input"),
     )
     OutlinedTextField(
+        shape = SteppedFrameShape,
         value = state.whyRisky,
         onValueChange = onRisk,
         label = { Text(stringResource(R.string.reports_editor_risk)) },
         minLines = 4,
         maxLines = 10,
         enabled = !state.saving,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().testTag("report_risk_input"),
     )
     OutlinedTextField(
+        shape = SteppedFrameShape,
         value = state.url,
         onValueChange = onUrl,
         label = { Text(stringResource(R.string.reports_editor_url)) },
@@ -816,7 +845,7 @@ fun ReportEditorScreen(
         supportingText = {
             Text(stringResource(R.string.reports_editor_url_hint))
         },
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().testTag("report_url_input"),
     )
 
     Text(
@@ -831,7 +860,7 @@ fun ReportEditorScreen(
             contentDescription = stringResource(R.string.reports_screenshot_preview),
             maxHeight = 240.dp,
         )
-        OutlinedButton(
+        ReportOutlineButton(
             onClick = onRemoveScreenshot,
             enabled = !state.saving,
             modifier = Modifier.fillMaxWidth(),
@@ -843,7 +872,7 @@ fun ReportEditorScreen(
             )
         }
     }
-    OutlinedButton(
+    ReportOutlineButton(
         onClick = { picker.launch("image/*") },
         enabled = !state.saving,
         modifier = Modifier.fillMaxWidth().testTag("report_screenshot_pick"),
@@ -859,7 +888,7 @@ fun ReportEditorScreen(
     ReportValidationText(state.validation)
     ReportErrorText(state.error)
 
-    Button(
+    ReportPrimaryButton(
         onClick = onSave,
         enabled = !state.saving &&
             state.title.trim().length >= 4 &&
@@ -879,7 +908,7 @@ fun ReportEditorScreen(
             ),
         )
     }
-        OutlinedButton(
+        ReportOutlineButton(
             onClick = onCancel,
             enabled = !state.saving,
             modifier = Modifier.fillMaxWidth(),
@@ -893,18 +922,18 @@ fun ReportEditorScreen(
 private fun ReportCard(report: PracticeReport, onClick: () -> Unit) {
     Surface(
         color = Navy900,
-        shape = RoundedCornerShape(10.dp),
+        shape = SteppedFrameShape,
         border = BorderStroke(
             1.dp,
             if (report.isOwner) Signal.copy(alpha = 0.45f) else Navy700,
         ),
-        modifier = Modifier.fillMaxWidth().clickable(
+        modifier = Modifier.fillMaxWidth().clip(SteppedFrameShape).clickable(
             role = Role.Button,
             onClick = onClick,
         ),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Row(
@@ -914,6 +943,8 @@ private fun ReportCard(report: PracticeReport, onClick: () -> Unit) {
             ) {
                 Text(
                     text = report.title,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
                     color = Ice,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
@@ -987,7 +1018,7 @@ private fun ReviewPill(review: ReportReviewStatus) {
     }
     Surface(
         color = color.copy(alpha = 0.12f),
-        shape = RoundedCornerShape(4.dp),
+        shape = SteppedFrameShape,
         border = BorderStroke(1.dp, color.copy(alpha = 0.4f)),
     ) {
         Text(
@@ -1006,7 +1037,7 @@ private fun RolePill(role: ReportRole) {
     val color = if (investigator) Signal else Muted
     Surface(
         color = color.copy(alpha = 0.1f),
-        shape = RoundedCornerShape(4.dp),
+        shape = SteppedFrameShape,
         border = BorderStroke(1.dp, color.copy(alpha = 0.3f)),
     ) {
         Text(
@@ -1033,11 +1064,11 @@ private fun ReportSection(
     Surface(
         color = Navy900,
         border = BorderStroke(1.dp, Navy700),
-        shape = RoundedCornerShape(10.dp),
+        shape = SteppedFrameShape,
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(
@@ -1122,15 +1153,17 @@ private fun <T> ReportChoiceRow(
             style = MaterialTheme.typography.labelMedium,
             fontFamily = FontFamily.Monospace,
         )
-        Row(
-            modifier = Modifier.horizontalScroll(rememberScrollState()),
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             choices.forEach { choice ->
                 FilterChip(
                     selected = choice.value == selected,
                     onClick = { onSelect(choice.value) },
-                    label = { Text(choice.label) },
+                    label = { Text(choice.label, style = MaterialTheme.typography.labelMedium) },
+                    shape = SteppedFrameShape,
                     enabled = enabled,
                     colors = FilterChipDefaults.filterChipColors(
                         containerColor = Navy950,
@@ -1172,7 +1205,7 @@ private fun ReportScreenshot(
         contentScale = ContentScale.Fit,
         modifier = Modifier.fillMaxWidth()
             .heightIn(max = maxHeight)
-            .clip(RoundedCornerShape(8.dp))
+            .clip(SteppedFrameShape)
             .background(Navy950),
     )
 }
@@ -1274,3 +1307,59 @@ private fun readAtMost(input: InputStream, max: Int): ByteArray {
 }
 
 private val ModeLabelColor = Muted
+
+// Match the pixel buttons used by the native module screens.
+@Composable
+private fun ReportPrimaryButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    content: @Composable RowScope.() -> Unit,
+) {
+    Button(
+        onClick = onClick, enabled = enabled,
+        modifier = modifier.heightIn(min = 52.dp),
+        shape = SteppedFrameShape,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color(0xFF83AE39), contentColor = Navy950,
+            disabledContainerColor = Navy700, disabledContentColor = Muted,
+        ),
+    ) { ReportButtonLabel { content() } }
+}
+
+@Composable
+private fun ReportOutlineButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    border: BorderStroke = BorderStroke(1.dp, Signal.copy(alpha = 0.5f)),
+    content: @Composable RowScope.() -> Unit,
+) {
+    OutlinedButton(
+        onClick = onClick, enabled = enabled,
+        modifier = modifier.heightIn(min = 48.dp), shape = SteppedFrameShape,
+        border = border,
+        colors = ButtonDefaults.outlinedButtonColors(contentColor = Signal, disabledContentColor = Muted),
+    ) { ReportButtonLabel { content() } }
+}
+
+@Composable
+private fun ReportTextButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    content: @Composable RowScope.() -> Unit,
+) {
+    TextButton(onClick = onClick, enabled = enabled, modifier = modifier.heightIn(min = 48.dp),
+        shape = SteppedFrameShape) { ReportButtonLabel { content() } }
+}
+
+@Composable
+private fun ReportButtonLabel(content: @Composable () -> Unit) {
+    androidx.compose.material3.ProvideTextStyle(
+        MaterialTheme.typography.labelMedium.copy(
+            fontFamily = FontFamily(Font(R.font.quest_pixel)),
+            fontSize = 10.sp, letterSpacing = 1.sp,
+        ), content = content,
+    )
+}

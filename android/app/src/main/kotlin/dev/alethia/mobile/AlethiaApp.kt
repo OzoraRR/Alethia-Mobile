@@ -43,7 +43,12 @@ import java.util.Locale
 
 @OptIn(kotlinx.coroutines.FlowPreview::class)
 @Composable
-fun AlethiaApp(model: PracticeViewModel, authModel: AuthViewModel, reportsModel: ReportsViewModel) {
+fun AlethiaApp(
+    model: PracticeViewModel,
+    authModel: AuthViewModel,
+    reportsModel: ReportsViewModel,
+    learning: LearningViewModel,
+) {
     val language by model.language.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val baseConfiguration = LocalConfiguration.current
@@ -68,6 +73,12 @@ fun AlethiaApp(model: PracticeViewModel, authModel: AuthViewModel, reportsModel:
         }
         val dashboardUiState by model.dashboardUiState.collectAsStateWithLifecycle()
         val backend by model.backend.collectAsStateWithLifecycle()
+        val learningUi by learning.ui.collectAsStateWithLifecycle()
+        val continueSession = learningUi.sessions.values.firstOrNull { it.state.stage in 1..5 }
+        if (screen == Screen.Courier) {
+            LearningScreen(learning, onExit = { model.refreshBackend(); model.returnToTraining() }, onAccountChanged = model::refreshBackend)
+            return@CompositionLocalProvider
+        }
         val authSession by authModel.sessionState.collectAsStateWithLifecycle()
         val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
         DisposableEffect(lifecycleOwner) {
@@ -84,6 +95,7 @@ fun AlethiaApp(model: PracticeViewModel, authModel: AuthViewModel, reportsModel:
         }
         LaunchedEffect(screen) {
             if (screen.roadmapCategoryOrNull() == null) generalScrollState.scrollTo(0)
+            if (screen == Screen.Reports) reportsModel.refresh()
         }
         val mainSection = screen in setOf(
             Screen.Dashboard, Screen.Modules, Screen.Catalog,
@@ -170,19 +182,28 @@ fun AlethiaApp(model: PracticeViewModel, authModel: AuthViewModel, reportsModel:
                                 onAcceptQuest = model::acceptDashboardQuest,
                                 onClaimQuest = model::claimDashboardQuest,
                                 onOpenReports = { model.navigate(Screen.Reports) },
-                                continueModuleProgress = when (courier.stage) {
-                                    CourierStage.Briefing, CourierStage.Complete -> null
-                                    else -> (courier.stage.ordinal / 5f).coerceIn(0f, 1f)
+                                continueModuleProgress = continueSession?.let { it.state.stage / 6f },
+                                continueModuleTitle = continueSession?.state?.module?.let { module ->
+                                    stringResource(when (module) {
+                                        ModuleId.CourierSms -> R.string.learn_title_sms
+                                        ModuleId.SocialEngineering -> R.string.learn_title_social
+                                        ModuleId.ExecutableFile -> R.string.learn_title_file
+                                    })
                                 },
                                 onContinueModule = {
-                                    model.selectModuleCategory(ModuleCategory.Phishing)
-                                    model.openCourier(ModuleCategory.Phishing.roadmapScreen())
+                                    continueSession?.state?.module?.let { module ->
+                                        val category = ModuleCategory.entries.first { it.moduleId() == module }
+                                        model.selectModuleCategory(category)
+                                        learning.open(module)
+                                        model.openCourier(category.roadmapScreen())
+                                    }
                                 },
                             )
                             Screen.Modules, Screen.Catalog -> ModuleSelectionScreen(
                                 selectedCategory = ModuleCategory.fromStorageKey(selectedModuleCategoryKey),
                                 courier = courier,
                                 serverAccess = backend.snapshot?.modules,
+                                sessions = learningUi.sessions,
                                 signedIn = backend.signedIn,
                                 onSelectCategory = model::selectModuleCategory,
                                 onOpenRoadmap = { model.navigate(ModuleCategory.fromStorageKey(selectedModuleCategoryKey).roadmapScreen()) },
@@ -191,11 +212,18 @@ fun AlethiaApp(model: PracticeViewModel, authModel: AuthViewModel, reportsModel:
                                 category = screen.roadmapCategoryOrNull() ?: ModuleCategory.Phishing,
                                 courier = courier,
                                 serverAccess = backend.snapshot?.modules,
+                                sessions = learningUi.sessions,
                                 signedIn = backend.signedIn,
                                 scrollState = roadmapScrollState,
                                 onBack = { model.navigate(Screen.Modules) },
                                 onSaveScroll = model::saveModuleRoadmapScroll,
-                                onStartPractice = { model.startModulePractice(roadmapScrollState.value, screen) },
+                                onStartPractice = {
+                                    val category = screen.roadmapCategoryOrNull() ?: ModuleCategory.Phishing
+                                    learning.open(category.moduleId(), completed = backend.snapshot?.modules?.get(category.moduleId().wireId) == "completed",
+                                        score = backend.snapshot?.moduleScores?.get(category.moduleId().wireId))
+                                    model.saveModuleRoadmapScroll(roadmapScrollState.value)
+                                    model.openCourier(screen)
+                                },
                             )
                             Screen.Courier -> CourierScreen(model)
                             Screen.Achievements -> LearnerListScreen(R.string.achievements_title, backend.snapshot?.achievements.orEmpty(), backend.signedIn)

@@ -150,6 +150,7 @@ fun DashboardScreen(
     onClaimQuest: (DashboardQuestState) -> Unit,
     continueModuleProgress: Float? = null,
     onContinueModule: () -> Unit = {},
+    continueModuleTitle: String? = null,
     onOpenReports: () -> Unit = {},
 ) {
     var selectedQuestIndex by remember { mutableIntStateOf(-1) }
@@ -200,7 +201,7 @@ fun DashboardScreen(
             }
             ReportSummaryCard(summary = state.reportSummary, onClick = onOpenReports)
             continueModuleProgress?.let { progress ->
-                ContinueLearningSection(progress = progress, onClick = onContinueModule)
+                ContinueLearningSection(progress = progress, onClick = onContinueModule, moduleTitle = continueModuleTitle)
             }
         }
     }
@@ -945,9 +946,9 @@ private fun DailyQuestDialog(
 }
 
 @Composable
-private fun ContinueLearningSection(progress: Float, onClick: () -> Unit) {
+private fun ContinueLearningSection(progress: Float, onClick: () -> Unit, moduleTitle: String? = null) {
     val safeProgress = progress.coerceIn(0f, 1f)
-    val title = stringResource(R.string.continue_module_title)
+    val title = moduleTitle ?: stringResource(R.string.continue_module_title)
     val cardDescription = stringResource(R.string.continue_module_accessibility, title)
     val progressDescription = stringResource(R.string.continue_module_progress, (safeProgress * 100).roundToInt())
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -974,7 +975,7 @@ private fun ContinueLearningSection(progress: Float, onClick: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Text(
-                    stringResource(R.string.continue_module_category),
+                    if (moduleTitle == null) stringResource(R.string.continue_module_category) else stringResource(R.string.modules_title),
                     color = Muted,
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
@@ -987,7 +988,7 @@ private fun ContinueLearningSection(progress: Float, onClick: () -> Unit) {
                     fontWeight = FontWeight.Medium,
                 )
                 Text(
-                    stringResource(R.string.continue_module_description),
+                    if (moduleTitle == null) stringResource(R.string.continue_module_description) else stringResource(R.string.learn_resume),
                     color = Muted,
                     style = MaterialTheme.typography.bodySmall,
                     lineHeight = 18.sp,

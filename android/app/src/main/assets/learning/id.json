@@ -1,0 +1,273 @@
+{
+  "socialEngineering": {
+    "label": "MODUL 02 · REKAYASA SOSIAL",
+    "title": "Rekonstruksi jejak digital",
+    "description": "Lihat bagaimana potongan informasi sehari-hari dapat dirangkai menjadi konteks manipulasi, lalu tentukan cara mengurangi paparannya.",
+    "safeNote": "SIMULASI AMAN · Semua orang, perusahaan, dan artefak bersifat fiktif",
+    "begin": "Mulai rekonstruksi",
+    "checkpoints": [
+      "Pilih vektor",
+      "Ekstraksi",
+      "Model dalih",
+      "Mitigasi"
+    ],
+    "briefing": {
+      "title": "Pilih vektor serangan",
+      "description": "Pelaku rekayasa sosial tidak meretas sistem, melainkan memanipulasi manusia. Pilih 2 hingga 5 informasi yang biasa kamu bagikan secara daring untuk melihat bagaimana penyerang merangkainya menjadi alat tekanan."
+    },
+    "board": {
+      "title": "Pilih 2–5 artefak sintetis",
+      "description": "Papan ini hanya berisi contoh fiktif. Tidak ada pencarian ke orang, akun, atau situs nyata.",
+      "continue": "Ekstrak residu digital",
+      "count": "{count} dari 5 dipilih",
+      "artifacts": [
+        {
+          "id": "visual",
+          "title": "Foto Keseharian & Meja Kerja",
+          "value": "Foto kopi atau tata meja kerja",
+          "clue": "Bocoran Visual",
+          "exposure": "Layar dapat memperlihatkan aplikasi internal; latar juga bisa mengungkap letak CCTV atau kartu identitas.",
+          "mitigation": "Periksa latar sebelum mengunggah. Pangkas atau buramkan layar, lencana, dan petunjuk lokasi; jangan unggah foto kerja secara langsung."
+        },
+        {
+          "id": "routine",
+          "title": "Pelacak Olahraga & Rutinitas",
+          "value": "Rute lari dan jadwal pusat kebugaran",
+          "clue": "Jejak Pelacak Berlebihan",
+          "exposure": "Rute dan jadwal berulang dapat memetakan pola hidup, waktu rumah kosong, atau saat ponsel tidak dipegang.",
+          "mitigation": "Jadikan rute privat dan tunda unggahan sampai aktivitas selesai. Hilangkan jadwal rutin dan lokasi presisi dari profil publik."
+        },
+        {
+          "id": "complaint",
+          "title": "Keluhan Terbuka di Media Sosial",
+          "value": "Keluhan paket atau layanan",
+          "clue": "Pelanggan Marah",
+          "exposure": "Unggahan dapat membuka nomor resi, ID pelanggan, atau nomor ponsel yang belum disensor.",
+          "mitigation": "Sensor nomor resi, ID pelanggan, dan kontak sebelum mengeluh. Bahas detail transaksi melalui kanal layanan yang dibuka sendiri."
+        },
+        {
+          "id": "career",
+          "title": "Merayakan Perubahan Karier",
+          "value": "Kabar pekerjaan baru",
+          "clue": "Euforia Karier",
+          "exposure": "Status karyawan baru dapat menarik penyamaran tim SDM/TI ketika kamu belum mengenal aturan atau anggota tim dukungan.",
+          "mitigation": "Tinjau siapa yang dapat melihat kabar pekerjaan. Verifikasi instruksi SDM/TI lewat direktori atau kanal internal resmi sebelum bertindak."
+        },
+        {
+          "id": "family",
+          "title": "Informasi Keluarga yang Terbuka",
+          "value": "Cerita anak, sekolah, dan penjemput",
+          "clue": "Terlalu Banyak Membagikan Info Keluarga",
+          "exposure": "Nama anak, sekolah, dan kerabat yang rutin menjemput dapat menjadi bahan rekayasa dalih yang terasa akrab.",
+          "mitigation": "Batasi nama dan jadwal keluarga yang dapat dilihat umum. Sepakati kata aman, lalu konfirmasi kabar darurat lewat nomor yang sudah dikenal."
+        }
+      ]
+    },
+    "extraction": {
+      "title": "Mengekstrak Residu Digital...",
+      "description": "Temuan berikut benar-benar mengikuti artefak dan pasangan yang kamu pilih. Tidak ada data nyata yang dicari atau dikirim.",
+      "continue": "Lihat model ancaman"
+    },
+    "pretext": {
+      "title": "Model ancaman · rekayasa dalih",
+      "description": "Contoh di bawah adalah pesan simulasi statis yang dinetralkan. Perhatikan bagaimana dua petunjuk dapat membentuk cerita yang terasa meyakinkan.",
+      "safeLabel": "CONTOH SIMULASI DINETRALKAN · jangan ikuti instruksi apa pun",
+      "continue": "Tinjau mitigasi"
+    },
+    "mitigation": {
+      "title": "Perlindungan data · mitigasi",
+      "description": "Terapkan langkah OPSEC yang langsung menutup jalur paparan dari kombinasi pilihanmu.",
+      "choiceLabel": "Pilih satu tindakan yang akan kamu terapkan",
+      "finish": "Selesaikan rekonstruksi",
+      "options": [
+        {
+          "id": "limit",
+          "label": "Minimalkan detail publik",
+          "description": "Kurangi lokasi, rutinitas, dan detail transaksi yang dapat dirangkai."
+        },
+        {
+          "id": "separate",
+          "label": "Pisahkan konteks identitas",
+          "description": "Jangan hubungkan informasi personal, pekerjaan, dan keluarga di unggahan yang sama."
+        },
+        {
+          "id": "verify",
+          "label": "Verifikasi lewat jalur mandiri",
+          "description": "Hubungi institusi memakai kanal resmi yang sudah dikenal, bukan detail dari pesan masuk."
+        }
+      ]
+    },
+    "summary": {
+      "title": "Jejak yang dipilih",
+      "description": "Artefak sintetis yang sedang direkonstruksi:"
+    },
+    "pairings": {
+      "visual_routine": {
+        "title": "Foto meja + rutinitas olahraga",
+        "extraction": "Aplikasi yang terlihat di layar dapat dipasangkan dengan waktu ketika pemilik jauh dari meja dan ponsel.",
+        "pretext": "Simulasi: pesan mengaku dari tim TI dan menyebut aplikasi yang tampak pada foto, dikirim saat jadwal olahraga membuat penerima kurang fokus.",
+        "mitigation": "Jadikan rute olahraga privat atau tertunda dan periksa domain pengirim. Hubungi dukungan melalui direktori internal yang dibuka sendiri."
+      },
+      "visual_complaint": {
+        "title": "Foto meja + keluhan transaksi",
+        "extraction": "Nomor resi yang belum disensor dapat dipadukan dengan petunjuk kantor, lencana, atau posisi meja.",
+        "pretext": "Simulasi: pihak yang mengaku kurir mengaitkan keluhan paket dengan kantor dan meminta tindakan melalui jalur kerja.",
+        "mitigation": "Sensor nomor resi dan jangan biarkan detail kantor menjadi jalur alternatif untuk urusan paket pribadi. Verifikasi di aplikasi kurir resmi."
+      },
+      "visual_career": {
+        "title": "Foto meja + kabar pekerjaan baru",
+        "extraction": "Status karyawan baru bertemu petunjuk aplikasi, sistem operasi, atau identitas tempat kerja dari foto.",
+        "pretext": "Simulasi: akun dukungan TI palsu menawarkan pemasangan alat kerja dengan menyebut detail yang tampak pada foto.",
+        "mitigation": "Jangan memasang atau membuka berkas atas instruksi pesan. Konfirmasi tatap muka atau lewat kanal TI internal yang dikenal."
+      },
+      "visual_family": {
+        "title": "Foto meja + unggahan keluarga",
+        "extraction": "Petunjuk kantor dapat disambungkan dengan nama atau lokasi sekolah anak yang disebut dalam unggahan.",
+        "pretext": "Simulasi: pesan mengaku dari tim SDM mengaitkan tunjangan kantor dengan informasi keluarga yang pernah dipublikasikan.",
+        "mitigation": "Pisahkan jejak keluarga dan pekerjaan. Tim SDM tidak perlu meminta data keluarga melalui tautan dari pesan tak terduga."
+      },
+      "routine_complaint": {
+        "title": "Rutinitas olahraga + komplain transaksi",
+        "extraction": "Waktu ketika ponsel jarang dipegang dapat dipasangkan dengan masalah paket yang membuat pemilik menunggu kabar.",
+        "pretext": "Simulasi: pemberitahuan paket mendesak muncul saat waktu olahraga, memanfaatkan perhatian yang terbagi dan keluhan yang sudah terlihat.",
+        "mitigation": "Tunda unggahan rute dan buka aplikasi kurir secara mandiri. Jangan gunakan tautan atau tenggat dari pesan masuk."
+      },
+      "routine_career": {
+        "title": "Rutinitas olahraga + pekerjaan baru",
+        "extraction": "Jadwal luring bertemu dorongan karyawan baru untuk cepat terlihat responsif.",
+        "pretext": "Simulasi: pesan yang mengaku dari atasan meminta berkas segera saat penerima sedang berolahraga dan menyebut status barunya.",
+        "mitigation": "Matikan pelacakan langsung yang dapat dilihat umum. Verifikasi permintaan atasan lewat kanal yang biasa dipakai; tekanan waktu bukan bukti otoritas."
+      },
+      "routine_family": {
+        "title": "Rutinitas olahraga + informasi keluarga",
+        "extraction": "Pola waktu luring dapat digabungkan dengan nama anak dan kerabat penjemput fiktif.",
+        "pretext": "Simulasi: panggilan darurat palsu menghubungi kerabat dan mengklaim pemilik sulit dijangkau saat berolahraga.",
+        "mitigation": "Sepakati kata aman keluarga dan cara verifikasi melalui jalur lain. Sekolah atau kerabat tidak boleh memproses permintaan uang dari penelepon."
+      },
+      "complaint_career": {
+        "title": "Komplain transaksi + pekerjaan baru",
+        "extraction": "Nomor resi yang dipublikasikan bertemu status karyawan baru yang ingin memberi kesan profesional.",
+        "pretext": "Simulasi: pihak yang mengaku layanan paket menyisipkan permintaan data kantor dengan dalih layanan prioritas.",
+        "mitigation": "Layanan logistik tidak memerlukan data pekerjaan untuk menyelesaikan pengiriman. Sensor resi dan verifikasi melalui aplikasi resmi."
+      },
+      "complaint_family": {
+        "title": "Komplain transaksi + informasi keluarga",
+        "extraction": "Masalah resi yang terbuka dapat dikaitkan dengan nama anak, sekolah, atau kerabat yang disebut publik.",
+        "pretext": "Simulasi: pesan kurir palsu menyebut kerabat atau sekolah untuk meminta kode atau perubahan serah-terima.",
+        "mitigation": "Jangan pernah memberikan OTP atau kode verifikasi kepada kurir/penelepon. Konfirmasi pengiriman lewat aplikasi resmi dan keluarga lewat nomor tersimpan."
+      },
+      "career_family": {
+        "title": "Pekerjaan baru + informasi keluarga",
+        "extraction": "Kabar karyawan baru dapat dirangkai dengan konteks anak atau sekolah untuk membangun narasi tunjangan yang terasa personal.",
+        "pretext": "Simulasi: pesan yang mengaku tim SDM mengaitkan pendaftaran tunjangan keluarga dengan tenggat mendesak.",
+        "mitigation": "Prinsip tanpa kepercayaan awal (Zero Trust) berlaku untuk pesan internal juga. Tanyakan kepada tim SDM lewat kanal perusahaan yang sudah tersimpan; jangan mengirim dokumen keluarga lewat tautan pesan."
+      }
+    },
+    "complete": {
+      "title": "Rekonstruksi selesai",
+      "description": "Kamu telah memilih artefak, melihat cara petunjuknya dirangkai, dan meninjau mitigasi yang relevan.",
+      "unlock": "Modul 3 terbuka setelah penyelesaian ini tercatat. Modul ini tidak menggunakan skor.",
+      "modules": "modul selesai",
+      "sync": "Penyelesaian hanya tersimpan di perangkat ini; sinkronisasi akun gagal. Modul berikutnya tetap menunggu konfirmasi server.",
+      "back": "Kembali ke daftar modul"
+    }
+  },
+  "executableFile": {
+    "label": "MODUL 03 · ANALISIS DOKUMEN",
+    "title": "Analisis Dokumen Berisiko",
+    "description": "Pesan ini menawarkan dokumen pengiriman yang mendesak. Periksa sumber, nama file, dan ekstensi sebelum bertindak.",
+    "safeNote": "SIMULASI AMAN · Tidak ada berkas nyata yang tersedia atau dijalankan",
+    "begin": "Buka pesan contoh",
+    "recipient": "PENERIMA · PESAN",
+    "checkpoints": [
+      "Pesan",
+      "Periksa",
+      "Verifikasi",
+      "Respons",
+      "Analisis"
+    ],
+    "scenario": {
+      "sender": "billing-notify@dokumen-kirim[.]example",
+      "timestamp": "Hari ini · 11.08",
+      "message": "Tagihan pengiriman perlu diperiksa sebelum pukul 12.00. Buka dokumen untuk memperbarui status.",
+      "fileName": "Tagihan_Pengiriman_2026.pdf.exe",
+      "extension": ".exe",
+      "link": "arsip-kirim[.]example/Tagihan_Pengiriman_2026.pdf.exe"
+    },
+    "inspect": {
+      "title": "Buka detail berkas satu per satu",
+      "description": "Nama file lengkap dan ekstensi sebenarnya menentukan apa yang akan dijalankan. Semua detail di sini fiktif dan tidak dapat diunduh.",
+      "source": "Sumber",
+      "file": "Nama file lengkap",
+      "extension": "Ekstensi sebenarnya",
+      "link": "Rute simulasi",
+      "note": "Ekstensi .exe bukan otomatis berbahaya, tetapi berkas tak terduga dari sumber tidak tepercaya perlu dihentikan dan diverifikasi.",
+      "continue": "Lanjut ke verifikasi",
+      "prompt": "Pilih minimal dua detail untuk diperiksa sebelum lanjut.",
+      "requirement": "Buka minimal dua detail berkas.",
+      "clickInstruction": "Klik teks detail untuk melihat hasil pengecekan. Buka minimal dua detail sebelum melanjutkan.",
+      "opened": "Detail yang sudah dibuka: {count} dari {total}."
+    },
+    "decide": {
+      "title": "Tentukan respons",
+      "options": {
+        "open": {
+          "label": "Buka atau unduh berkas",
+          "description": "Meneruskan rute berkas simulasi."
+        },
+        "verify": {
+          "label": "Verifikasi lewat kanal resmi",
+          "description": "Periksa pesanan atau pengirim pada kanal yang sudah dikenal."
+        },
+        "ignore": {
+          "label": "Hapus atau abaikan",
+          "description": "Hentikan interaksi dengan pesan dan berkas."
+        },
+        "report": {
+          "label": "Laporkan pesan",
+          "description": "Tandai pesan melalui jalur pelaporan yang tepercaya."
+        }
+      }
+    },
+    "analysis": {
+      "label": "ANALISIS BERKAS · SIMULASI",
+      "status": "STATUS",
+      "impact": "DAMPAK",
+      "pending": "MENUNGGU RESPONS",
+      "risky": "RUTE BERISIKO TERSIMULASI",
+      "interrupted": "RUTE BERKAS TERPUTUS",
+      "unsafe": "Membuka atau mengunduh berkas tak terduga membuat rute berisiko maju. Tidak ada berkas nyata yang dibuat, diunduh, atau dijalankan.",
+      "safe": "Kanal resmi atau penghentian interaksi memutus rute berkas sebelum ada tindakan pada perangkat.",
+      "why": "Mengapa penting",
+      "whyValue": "Nama file dapat menyamarkan ekstensi sebenarnya; sumber dan konteks tetap perlu diperiksa.",
+      "safer": "Tindakan lebih aman",
+      "saferValue": "Jangan buka berkas yang tidak diharapkan. Verifikasi klaim lewat kanal tepercaya, lalu laporkan bila perlu.",
+      "finish": "Selesaikan latihan",
+      "verifiedLabel": "VERIFIKASI",
+      "verifiedYes": "Dilakukan sebelum memutuskan",
+      "verifiedNo": "Tidak dilakukan"
+    },
+    "complete": {
+      "title": "Latihan selesai",
+      "description": "Kamu memeriksa sumber, konteks, dan ekstensi sebelum menentukan respons.",
+      "modules": "modul selesai",
+      "scoreLabel": "Skor keputusan",
+      "perfect": "Skor sempurna — modul berikutnya terbuka.",
+      "notPerfect": "Belum sempurna — ulangi modul ini untuk membuka langkah berikutnya.",
+      "sync": "Hanya tersimpan di perangkat ini; hasil ini belum disinkronkan ke akunmu.",
+      "back": "Kembali ke daftar modul"
+    },
+    "verify": {
+      "title": "Verifikasi lewat kanal resmi",
+      "description": "Klaim pengiriman bisa dicek tanpa membuka berkas: cek pesanan di kanal yang sudah kamu kenal, bukan lewat tautan dari pesan.",
+      "action": "Buka kanal resmi",
+      "appTitle": "Kurir · aplikasi resmi",
+      "appNote": "Simulasi · kanal yang kamu buka sendiri",
+      "prompt": "Cari pesanan di kanal resmi",
+      "resultLabel": "Hasil pengecekan",
+      "resultTitle": "Tidak ada dokumen seperti itu di akunmu",
+      "resultBody": "Kanal resmi tidak memuat tagihan (.pdf.exe) dan pengirim di pesan bukan domain kurirmu. Klaim itu tidak berasal dari kurir.",
+      "confirm": "Sudah dicek, lanjutkan"
+    }
+  }
+}

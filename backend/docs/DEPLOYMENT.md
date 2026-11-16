@@ -26,7 +26,7 @@ Vercel Hobby is limited to personal, non-commercial use. Vercel lists Pro at USD
 
 1. Push-triggered deployment is verified; `main` targets Production and the Auth configuration is now verified. A pull request can use Preview staging. Before production release, create the `release` branch and select it as the Production branch only after separate production Supabase credentials are configured.
 2. The Vercel project root directory is set to `backend/` and Node.js is set to 24.x.
-3. Use the existing `Alethia Mobile` project for Preview as designated above. It currently has all 50 repository migrations applied. Keep production user data out of this project. Supabase CLI labels it `production`, so provision a distinct Supabase project for real production users.
+3. Use the existing `Alethia Mobile` project for Preview as designated above. It currently has all 51 repository migrations applied. Keep production user data out of this project. Supabase CLI labels it `production`, so provision a distinct Supabase project for real production users.
 4. These variables are already configured for **Preview and Production**:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
@@ -45,3 +45,7 @@ API responses include a request ID. Failure logs contain only structured metadat
 ## Rollback
 
 For an API-only regression, roll back to the last healthy deployment and preserve the failing deployment's request IDs for investigation. For a database migration, first determine whether the change is backward compatible with the prior API build; do not assume that rolling back the API reverses a schema change. Database restoration follows [BACKUP_AND_INCIDENTS.md](BACKUP_AND_INCIDENTS.md).
+
+## Native learning session recovery — 16 November 2026
+
+Applied `20261116000000_learning_session_recovery.sql` locally and to Alethia Mobile hosted. It adds account-owned RPC recovery snapshots without changing the existing score, points, quest or unlock rules. All 335 local database assertions passed. A temporary hosted account verified three-module completion, recovery, idempotent rewards/claims and re-login, then was deleted. No API deployment was required for these Supabase RPC additions.

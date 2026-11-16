@@ -72,4 +72,4 @@ Berkas `.env*`, profil `alethia*.properties` lokal, `local.properties`, token CL
 
 ## Lingkup pekerjaan yang masih terbuka
 
-Lihat [integrasi Android](../android/docs/INTEGRATION.md). Dua simulasi selain Courier masih placeholder. Profil lengkap, report editing/deletion/pagination, avatar, dan pemulihan password belum selesai. Production Vercel sudah terkonfigurasi dan dipakai profil Android hosted/default. Database Supabase masih menjadi target pengembangan bersama, sehingga kesiapan rilis tetap perlu ditinjau.
+Lihat [integrasi Android](../android/docs/INTEGRATION.md). Ketiga simulasi native dan reports hub sudah terintegrasi; detailnya ada di `android/docs/MODULES.md` dan `android/docs/INTEGRATION.md`. Migrasi pemulihan sesi `20261116000000` sudah diterapkan pada lokal dan hosted. Profil lengkap, avatar, export/penghapusan akun dari UI, pemulihan password dan penyimpanan screenshot di Supabase Storage belum selesai. Production Vercel sudah terkonfigurasi dan dipakai profil Android hosted/default. Database Supabase masih menjadi target pengembangan bersama, sehingga kesiapan rilis tetap perlu ditinjau.

@@ -31,7 +31,12 @@ class LearnerRepository(
 
     suspend fun signOut() = client.auth.signOut()
 
-    private suspend fun request(path: String, method: String = "GET", body: JSONObject? = null): String {
+    internal suspend fun request(
+        path: String,
+        method: String = "GET",
+        body: JSONObject? = null,
+        prefer: String? = null,
+    ): String {
         val owner = client.auth.currentUserOrNull()?.id ?: error("Authentication required")
         for (attempt in 0..1) {
             val token = client.auth.currentAccessTokenOrNull() ?: error("Authentication required")
@@ -40,11 +45,12 @@ class LearnerRepository(
                 try {
                     connection.requestMethod = method
                     connection.connectTimeout = 15000
-                    connection.readTimeout = 15000
+                    connection.readTimeout = 30000
                     connection.setRequestProperty("apikey", publicKey)
                     connection.setRequestProperty("Authorization", "Bearer $token")
                     connection.setRequestProperty("Accept", "application/json")
                     if (method == "HEAD") connection.setRequestProperty("Prefer", "count=exact")
+                    else if (prefer != null) connection.setRequestProperty("Prefer", prefer)
                     if (body != null) {
                         connection.doOutput = true
                         connection.setRequestProperty("Content-Type", "application/json")
@@ -53,6 +59,8 @@ class LearnerRepository(
                     val code = connection.responseCode
                     val raw = if (method == "HEAD" && code in 200..299) {
                         connection.getHeaderField("Content-Range")?.substringAfterLast('/') ?: error("Missing count")
+                    } else if (code == 204) {
+                        ""
                     } else (if (code in 200..299) connection.inputStream else connection.errorStream)
                         ?.bufferedReader()?.use { it.readText() }.orEmpty()
                     code to raw
@@ -71,6 +79,11 @@ class LearnerRepository(
     }
 
     suspend fun rpc(name: String, body: JSONObject = JSONObject()): String = request("rpc/$name", "POST", body)
+
+    suspend fun currentUserId(): String? = client.auth.currentUserOrNull()?.id
+
+    /** Server-authoritative investigator gate; failures fall back to the student UI. */
+    suspend fun isInvestigator(): Boolean = rpc("is_investigator").trim() == "true"
 
     suspend fun load(): LearnerSnapshot {
         rpc("record_daily_activity", JSONObject().put("requested_timezone", java.util.TimeZone.getDefault().id))

@@ -30,5 +30,8 @@ class AppContainer(context: Context) {
     val learnerRepository: LearnerRepository? by lazy {
         client?.let { LearnerRepository(it, BuildConfig.SUPABASE_URL, BuildConfig.SUPABASE_PUBLISHABLE_KEY) }
     }
+    val reportsRepository: ReportsRepository? by lazy {
+        learnerRepository?.let { ReportsRepository(it) }
+    }
 
 }

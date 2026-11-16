@@ -1,6 +1,7 @@
 .gradle/
 .kotlin/
 **/build/
+**/bin/
 local.properties
 alethia.properties
 alethia.*.properties

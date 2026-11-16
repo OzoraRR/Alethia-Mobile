@@ -43,7 +43,7 @@ import java.util.Locale
 
 @OptIn(kotlinx.coroutines.FlowPreview::class)
 @Composable
-fun AlethiaApp(model: PracticeViewModel, authModel: AuthViewModel) {
+fun AlethiaApp(model: PracticeViewModel, authModel: AuthViewModel, reportsModel: ReportsViewModel) {
     val language by model.language.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val baseConfiguration = LocalConfiguration.current
@@ -54,6 +54,7 @@ fun AlethiaApp(model: PracticeViewModel, authModel: AuthViewModel) {
     CompositionLocalProvider(LocalContext provides localizedContext, LocalConfiguration provides configuration) {
         val screen by model.screen.collectAsStateWithLifecycle()
         val courierParent by model.courierParent.collectAsStateWithLifecycle()
+        val reportEditorParent by reportsModel.editorParent.collectAsStateWithLifecycle()
         val courier by model.courier.collectAsStateWithLifecycle()
         val selectedModuleCategoryKey by model.selectedModuleCategoryKey.collectAsStateWithLifecycle()
         val savedRoadmapScroll by model.moduleRoadmapScroll.collectAsStateWithLifecycle()
@@ -91,7 +92,7 @@ fun AlethiaApp(model: PracticeViewModel, authModel: AuthViewModel) {
         )
         BackHandler(screen != Screen.Welcome && screen != Screen.Dashboard) {
             if (screen.roadmapCategoryOrNull() != null) model.saveModuleRoadmapScroll(roadmapScrollState.value)
-            model.navigate(backDestination(screen, courierParent))
+            model.navigate(backDestination(screen, courierParent, reportEditorParent))
         }
         Scaffold(
             containerColor = Navy950,
@@ -111,7 +112,7 @@ fun AlethiaApp(model: PracticeViewModel, authModel: AuthViewModel) {
                     Surface(color = Navy950) {
                         Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 16.dp, vertical = 8.dp),
                             horizontalArrangement = Arrangement.SpaceBetween) {
-                            TextButton(onClick = { model.navigate(backDestination(screen, courierParent)) }) {
+                            TextButton(onClick = { model.navigate(backDestination(screen, courierParent, reportEditorParent)) }) {
                                 Text(stringResource(R.string.back))
                             }
                             if (screen != Screen.Profile) {
@@ -147,7 +148,7 @@ fun AlethiaApp(model: PracticeViewModel, authModel: AuthViewModel) {
                                 if (backend.failed) {
                                     Text(stringResource(R.string.backend_error), color = Warning)
                                 }
-                                if (backend.failed || screen in setOf(Screen.Dashboard, Screen.Reports, Screen.Notifications, Screen.Achievements)) {
+                                if (backend.failed || screen in setOf(Screen.Dashboard, Screen.Notifications, Screen.Achievements)) {
                                     TextButton(onClick = model::refreshBackend, enabled = !backend.busy) { Text(stringResource(R.string.backend_refresh)) }
                                 }
                             }
@@ -198,10 +199,69 @@ fun AlethiaApp(model: PracticeViewModel, authModel: AuthViewModel) {
                             )
                             Screen.Courier -> CourierScreen(model)
                             Screen.Achievements -> LearnerListScreen(R.string.achievements_title, backend.snapshot?.achievements.orEmpty(), backend.signedIn)
-                            Screen.Reports -> {
-                                LearnerListScreen(R.string.reports_title, backend.snapshot?.reports.orEmpty(), backend.signedIn)
-                                if (backend.signedIn) key(backend.reportRevision) { ReportForm(!backend.busy, model::submitReport) }
-                            }
+                            Screen.Reports -> ReportsListScreen(
+                                    state = reportsModel.list.collectAsStateWithLifecycle().value,
+                                    onRefresh = reportsModel::refresh,
+                                    onLoadMore = reportsModel::loadMore,
+                                    onScope = reportsModel::setScope,
+                                    onSort = reportsModel::setSort,
+                                    onOpenReport = { id ->
+                                        reportsModel.openDetail(id)
+                                        model.navigate(Screen.ReportDetail)
+                                    },
+                                    onNewReport = {
+                                        reportsModel.openNewEditor()
+                                        model.navigate(Screen.ReportEditor)
+                                    },
+                                )
+                                Screen.ReportDetail -> {
+                                    val detailId = reportsModel.detailId.collectAsStateWithLifecycle().value
+                                    LaunchedEffect(detailId) {
+                                        detailId?.let(reportsModel::loadDetail)
+                                    }
+                                    ReportDetailScreen(
+                                        state = reportsModel.detail.collectAsStateWithLifecycle().value,
+                                        onRetry = { detailId?.let(reportsModel::loadDetail) },
+                                        onToggleSignal = reportsModel::toggleSignal,
+                                        onAddNote = { text, clear -> reportsModel.addNote(text, clear) },
+                                        onCastVerdict = { verdict, reason, clear -> reportsModel.castVerdict(verdict, reason, clear) },
+                                        onClearValidation = reportsModel::clearDetailValidation,
+                                        onEdit = { r ->
+                                            reportsModel.openEditor(r)
+                                            model.navigate(Screen.ReportEditor)
+                                        },
+                                        onDelete = {
+                                            reportsModel.deleteReport {
+                                                model.navigate(Screen.Reports)
+                                                model.refreshBackend()
+                                            }
+                                        },
+                                    )
+                                }
+                                Screen.ReportEditor -> {
+                                    LaunchedEffect(Unit) { reportsModel.ensureEditorLoaded() }
+                                    ReportEditorScreen(
+                                        state = reportsModel.editor.collectAsStateWithLifecycle().value,
+                                        onTitle = reportsModel::setEditorTitle,
+                                        onCategory = reportsModel::setEditorCategory,
+                                        onChannel = reportsModel::setEditorChannel,
+                                        onPattern = reportsModel::setEditorPattern,
+                                        onEvidence = reportsModel::setEditorEvidence,
+                                        onRisk = reportsModel::setEditorRisk,
+                                        onUrl = reportsModel::setEditorUrl,
+                                        onScreenshot = reportsModel::setEditorScreenshot,
+                                        onScreenshotError = reportsModel::setEditorValidation,
+                                        onRemoveScreenshot = reportsModel::removeEditorScreenshot,
+                                        onSave = {
+                                            reportsModel.saveEditor { id ->
+                                                reportsModel.openDetail(id)
+                                                model.navigate(Screen.ReportDetail)
+                                                model.refreshBackend()
+                                            }
+                                        },
+                                        onCancel = { model.navigate(reportEditorParent) },
+                                    )
+                                }
                             Screen.Notifications -> LearnerListScreen(R.string.notifications_title, backend.snapshot?.notifications.orEmpty(), backend.signedIn,
                                 onRead = { model.readNotification(it) })
                             Screen.Profile -> ProfileScreen(
@@ -222,7 +282,7 @@ fun AlethiaApp(model: PracticeViewModel, authModel: AuthViewModel) {
     }
 }
 
-private fun backDestination(screen: Screen, courierParent: Screen): Screen = when (screen) {
+private fun backDestination(screen: Screen, courierParent: Screen, reportEditorParent: Screen): Screen = when (screen) {
     Screen.Welcome -> Screen.Welcome
     Screen.Login -> Screen.Welcome
     Screen.SignUp -> Screen.Login
@@ -231,6 +291,8 @@ private fun backDestination(screen: Screen, courierParent: Screen): Screen = whe
     Screen.Catalog -> Screen.Welcome
     Screen.ModuleRoadmapPhishing, Screen.ModuleRoadmapSocialEngineering, Screen.ModuleRoadmapMaliciousDocument -> Screen.Modules
     Screen.Courier -> courierParent
+    Screen.ReportDetail -> Screen.Reports
+    Screen.ReportEditor -> reportEditorParent
     Screen.Achievements, Screen.Reports, Screen.Notifications, Screen.Profile -> Screen.Dashboard
 }
 

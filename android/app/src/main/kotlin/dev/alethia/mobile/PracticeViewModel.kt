@@ -22,7 +22,7 @@ import kotlinx.coroutines.launch
 enum class Screen {
     Welcome, Login, SignUp, Dashboard, Modules, Catalog,
     ModuleRoadmapPhishing, ModuleRoadmapSocialEngineering, ModuleRoadmapMaliciousDocument,
-    Courier, Achievements, Reports, Notifications, Profile,
+    Courier, Achievements, Reports, ReportDetail, ReportEditor, Notifications, Profile,
 }
 
 class PracticeViewModel(

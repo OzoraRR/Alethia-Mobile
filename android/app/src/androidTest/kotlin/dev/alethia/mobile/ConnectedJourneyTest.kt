@@ -38,7 +38,7 @@ class ConnectedJourneyTest {
     @Test fun usernameLoginLoadsRealDashboardAndLogoutClearsAccount() {
         assumeTrue(URI(BuildConfig.SUPABASE_URL).host in setOf("10.0.2.2", "127.0.0.1", "localhost"))
         val client = createSupabaseClient(BuildConfig.SUPABASE_URL, BuildConfig.SUPABASE_PUBLISHABLE_KEY) {
-            install(Auth) { sessionManager = MemorySessionManager(); autoLoadFromStorage = false; autoSaveToStorage = false }
+            install(Auth) { sessionManager = MemorySessionManager(); autoLoadFromStorage = true; autoSaveToStorage = false; enableLifecycleCallbacks = false }
         }
         val username = "ui_${UUID.randomUUID().toString().replace("-", "").take(12)}"
         val password = "LocalOnly_${UUID.randomUUID()}"

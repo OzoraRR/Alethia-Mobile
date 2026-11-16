@@ -66,6 +66,7 @@ class SupabaseAuthRepository(
     }
 
     override suspend fun signIn(identifier: String, password: String): AuthResult = try {
+        client.auth.awaitInitialization()
         val trimmedIdentifier = identifier.trim()
         if (trimmedIdentifier.contains('@')) {
             client.auth.signInWith(Email) {
@@ -96,6 +97,7 @@ class SupabaseAuthRepository(
     }
 
     override suspend fun signUp(username: String, email: String, password: String): AuthResult = try {
+        client.auth.awaitInitialization()
         client.auth.signUpWith(Email) {
             this.email = email.trim()
             this.password = password

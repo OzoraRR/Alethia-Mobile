@@ -1,10 +1,10 @@
 # Android/backend integration
 
-Updated 16 November 2026.
+Updated 16 November 2026. See [native module implementation](MODULES.md).
 
 ## Implemented flow
 
-The existing Compose screens use the same Supabase client as authentication. `AuthRepository` handles credentials and imports a complete user session after username login. `LearnerRepository` sends the caller JWT to Supabase REST/RPCs; no server secret is packaged in Android. `PracticeViewModel` exposes loading/error/data state, clears account data on logout/account changes, and preserves attempt IDs in SavedStateHandle for completion retries. The SDK handles session persistence and refresh; REST requests retry once after refreshing an expired JWT.
+The existing Compose screens use the same Supabase client as authentication. `AuthRepository` handles credentials and imports a complete user session after username login. `LearnerRepository` sends the caller JWT to Supabase REST/RPCs; no server secret is packaged in Android. `PracticeViewModel` exposes loading/error/data state, clears account data on logout/account changes, and handles account refreshes. `LearningViewModel` owns native lesson state, durable per-account recovery and completion retries. The SDK handles session persistence and refresh; REST requests retry once after refreshing an expired JWT.
 
 | Feature | Backend boundary |
 | --- | --- |
@@ -13,8 +13,8 @@ The existing Compose screens use the same Supabase client as authentication. `Au
 | Daily activity/streak | `record_daily_activity` with the device timezone; invoked on data refresh |
 | Dashboard, module access, EXP, quests, achievements | `get_dashboard_state` |
 | Quest reward | `claim_daily_quest` using assignment ID/date; no client points update |
-| Courier start/completion | `begin_verified_practice_attempt`, `complete_verified_practice_attempt` with ordered decision IDs; no client-authored score |
-| Reports | Own `practice_reports` rows with explicit owner filter and exact summary counts; basic SMS submission under RLS |
+| All three native modules | `open_learning_session`, `get_learning_sessions`, `save_learning_session`, then `complete_verified_practice_attempt`; no client-authored score |
+| Reports | Community/personal feeds, cursor paging, sorting, owner-only create/edit/delete, and investigator signals/notes/verdicts through Supabase RLS/RPCs; summary counts remain exact |
 | Notifications | Own notifications and `mark_notification_read` |
 | App language menu | Available from the globe in every top bar; own `profiles.preferred_locale` under RLS, mirrored to DataStore |
 | Profile name and password | Own `profiles.display_name` PATCH; password through Supabase Auth |
@@ -23,7 +23,7 @@ The existing Compose screens use the same Supabase client as authentication. `Au
 
 Daily quests are assigned automatically by the existing backend; they have no separate server-side acceptance operation. The signed-in UI treats assigned quests as accepted and offers claim only after reaching the server target. Credits are not part of the backend model, so connected quest cards show the existing EXP reward only. Server quest titles, descriptions and progress replace preview objectives. Preview data remains limited to guest/debug preview usage.
 
-Failed writes keep the practice on its current step. Completing a server attempt is idempotent, so a lost completion response can be retried with the saved attempt ID. After completion, visible module completion is based on server access state, including the perfect-score requirement. Reports/notifications currently show the latest 100 personal rows; the report summary counts all personal rows. No schema migration is needed for this integration.
+Failed writes keep the practice on its current step. Completing a server attempt is idempotent, so a lost completion response can be retried with the saved attempt ID. After completion, visible module completion is based on server access state, including the perfect-score requirement. Reports/notifications currently show the latest 100 personal rows; the report summary counts all personal rows. Recovery sessions use additive migration `20261116000000_learning_session_recovery.sql`, applied locally and to hosted.
 
 ## Run the matching environment
 
@@ -36,7 +36,9 @@ Open `android/` in Android Studio.
 
 ## Validation
 
-Connected Android instrumentation creates synthetic accounts only when the Supabase hostname is local. It exercises daily activity, exact report counts, idempotent claims, scoring at 75 and 100, idempotent completion, report submission, achievements, notification reads, persisted locale and data after username re-login. The Compose connected journey checks that username login renders real account data and logout returns to the landing page. Cleanup uses the existing account-deletion API. Guest journeys cover practice and recreation separately.
+By default, connected Android instrumentation creates synthetic accounts only against local Supabase. It exercises daily activity, exact report counts, idempotent claims, scoring at 75 and 100, idempotent completion, report submission, achievements, notification reads, persisted locale and data after username re-login. The Compose connected journey checks that username login renders real account data and logout returns to the landing page. Cleanup uses the existing account-deletion API. Guest journeys cover practice and recreation separately.
+
+Two signed-in regression tests can opt in to Alethia Mobile hosted using `-PalethiaConfig=alethia.hosted.properties` and `-Pandroid.testInstrumentationRunnerArguments.alethiaHostedAudit=true`. They create synthetic accounts and clean them up through the existing Vercel account-deletion endpoint. CI uses the blank `alethia.properties.example` profile and does not opt in to hosted account creation.
 
 ```sh
 # backend/: local Supabase must already be running
@@ -46,13 +48,14 @@ pnpm dev:local
 ./gradlew :core:test :app:lintDebug :app:connectedDebugAndroidTest -PalethiaConfig=alethia.local.properties
 ```
 
-Validation on 15 November: Android 17 / 16 KB emulator, all 6 instrumentation tests passed against Docker local Supabase, JVM tests passed, and lint completed with zero errors. Synthetic test accounts were deleted. Hosted accounts were not used for this automated integration run.
+Validation on 15 November: Android 17 / 16 KB emulator, all 6 instrumentation tests passed against Docker local Supabase, JVM tests passed, and lint completed with zero errors. Synthetic test accounts were deleted.
+
+Validation on 16 November: the Android CI-equivalent JVM tests, lint, debug APK build and Android 17 instrumentation task completed successfully. With the blank CI profile, 6 offline UI tests ran and 4 account-backed cases were not exercised. Hosted recovery and the signed-in three-module journey passed. The hosted journey also exercised report create/edit/delete, URL defanging, investigator signal/note/verdict writes and cleanup; temporary accounts and reports were deleted.
 
 ## Frontend features still to build
 
-- Actual social-engineering and malicious-document simulations. Their visual roadmap remains a placeholder even when the server prerequisites are met.
-- Report editing, deletion, pagination, additional categories and community interactions; current form is explicitly SMS-only.
+- Report screenshots are currently stored as inline data URLs with a 500 KiB image limit; Supabase Storage is the next step if larger attachments or higher volume are needed.
 - Avatar controls, export/deletion UI and password recovery. Display-name and password editing are available on the Edit Profile screen.
 - Notification/achievement presentation refinement and pagination beyond the first 100 list rows.
 
-The existing server APIs for some of these features are available, but their Android user flows do not exist yet. Hosted end-to-end testing and release configuration remain separate follow-up work.
+The existing server APIs for some of these features are available, but their Android user flows do not exist yet. Hosted module RPC contracts have been checked with a temporary account; release configuration remains follow-up work.

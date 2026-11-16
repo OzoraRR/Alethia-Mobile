@@ -22,7 +22,7 @@ import kotlinx.coroutines.launch
 enum class Screen {
     Welcome, Login, SignUp, Dashboard, Modules, Catalog,
     ModuleRoadmapPhishing, ModuleRoadmapSocialEngineering, ModuleRoadmapMaliciousDocument,
-    Courier, Achievements, Reports, Notifications, Profile, EditProfile,
+    Courier, Achievements, Reports, ReportDetail, ReportEditor, Notifications, Profile, EditProfile,
 }
 
 class PracticeViewModel(
@@ -96,7 +96,13 @@ class PracticeViewModel(
         mutableDashboardUiState.value = snapshot.dashboard
         mutableBackend.value = mutableBackend.value.copy(snapshot = snapshot)
     }
-    fun refreshBackend() { operation { refreshSnapshot() } }
+    fun refreshBackend() {
+        val expected = owner
+        viewModelScope.launch {
+            operationJob?.join()
+            if (owner == expected && expected != null) operation { refreshSnapshot() }
+        }
+    }
     fun signOut() { operation { repository!!.signOut() } }
     fun clearProfileMessage() { mutableProfileMessage.value = null }
     fun saveProfile(name: String, password: String, confirmation: String) {

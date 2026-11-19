@@ -31,7 +31,7 @@
     "typescript": "5.7.2",
     "eslint": "9.39.5",
     "eslint-config-next": "15.5.28",
-    "supabase": "3.1.0",
+    "supabase": "3.2.0",
     "@eslint/eslintrc": "3.3.7"
   },
   "packageManager": "pnpm@12.17.0",
